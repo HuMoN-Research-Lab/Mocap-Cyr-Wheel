@@ -1,6 +1,6 @@
 import bpy
 import csv 
-import Numpy as np
+import numpy as np
 from mathutils import Matrix, Vector, Euler
 
 #script to read tsv files in blender 
@@ -26,18 +26,15 @@ with open(r"C:\Users\jacki\OneDrive\Desktop\blender ring\steve.tsv", "r") as tsv
         if (count == 3):
             count = 0
             count_row += 1
-        if x == len(current_row) - 10:
-            print(arr)
+            
 #-----------------------------------------------------------------------------------
 #Create an array of marker names 
 #column 9 of tsv file holds all marker names
 current_row = file[9] 
-name_arr = np.arange(len(current_row - 1))
-for name in range(1, len(current_row)):
-    name_arr.append(name)
-    
-print(name_arr)
-    
+print(current_row)
+name_arr = []
+for index in range(1, len(current_row)):
+    name_arr.append(current_row[index])
         
 #-----------------------------------------------------------------------------------
 #Create empties at marker positions    
@@ -49,7 +46,8 @@ for col in arr:
     coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
     bpy.ops.object.add(type='EMPTY', location=coord)  
     mt = bpy.context.active_object  
-    mt.name = "Empty" + str(name)
+    #get name from name array "name_arr"
+    mt.name = name_arr[name]
     name += 1
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
