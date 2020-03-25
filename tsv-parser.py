@@ -56,6 +56,11 @@ for col in arr:
     #sanity check
     print(coord)
     
+Steve_CyrWheel01 = bpy.data.objects.get('Steve_CyrWheel01')
+Steve_CyrWheel02 = bpy.data.objects.get('Steve_CyrWheel02')
+Steve_CyrWheel03 = bpy.data.objects.get('Steve_CyrWheel03')
+Steve_CyrWheel04 = bpy.data.objects.get('Steve_CyrWheel04')
+Steve_CyrWheel05 = bpy.data.objects.get('Steve_CyrWheel05')
 #-----------------------------------------------------------------------------------
 #Create armature of wheel if it is the 1st frame
 
@@ -99,14 +104,44 @@ root_bone = armature_data.data.edit_bones.new('Root')
 root_bone.head = (0,0,0)
 root_bone.tail = (0,0.5,0)
 #Set its location 
-root_bone.matrix = bpy.data.objects.get('Steve_CyrWheel01').matrix_world
-root_bone.tail = bpy.data.objects.get('Steve_CyrWheel01').location
-root_bone.head =  bpy.data.objects.get('Steve_CyrWheel05').location
+root_bone.matrix = Steve_CyrWheel01.matrix_world
+root_bone.tail = Steve_CyrWheel01.location
+root_bone.head =  Steve_CyrWheel05.location
 
 #Add wheel bones to armature
-marker2 = add_child_bone('marker2', root_bone, bpy.data.objects.get('Steve_CyrWheel02'))
-marker3 = add_child_bone('marker3', marker2, bpy.data.objects.get('Steve_CyrWheel03'))
-marker4 = add_child_bone('marker4', marker3, bpy.data.objects.get('Steve_CyrWheel04'))
-marker5 = add_child_bone('marker5', marker4, bpy.data.objects.get('Steve_CyrWheel05'))
+marker2 = add_child_bone('marker2', root_bone, Steve_CyrWheel02)
+marker3 = add_child_bone('marker3', marker2, Steve_CyrWheel03)
+marker4 = add_child_bone('marker4', marker3, Steve_CyrWheel04)
+marker5 = add_child_bone('marker5', marker4, Steve_CyrWheel05)
+
+#bone structure by empties
+#Root:    head = Steve_CyrWheel05, tail = Steve_CyrWheel01
+#marker2: head = Steve_CyrWheel01, tail = Steve_CyrWheel02
+#marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
+#marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
+#marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
 
 #parent heads and tails to empties
+#use bone constraints 
+def parent_to_empties(bone_name, head, tail):
+    bpy.ops.object.posemode_toggle()
+    #Armature name is "Armature.004"
+    marker = bpy.data.objects["Armature.004"].data.bones[bone_name]
+    #Set marker selected
+    marker.select = True
+    #Set marker active
+    bpy.context.object.data.bones.active = marker
+    bone = bpy.context.object.pose.bones[bone_name]
+    bpy.ops.pose.constraint_add(type='COPY_LOCATION')
+    bone.constraints["Copy Location"].target = head
+    bpy.ops.pose.constraint_add(type='STRETCH_TO')
+    bone.constraints["Stretch To"].target = tail
+    bpy.ops.object.posemode_toggle()
+    
+#set parents of heads and tails for each bone 
+parent_to_empties("Root", Steve_CyrWheel05, Steve_CyrWheel01)
+parent_to_empties("marker2", Steve_CyrWheel01, Steve_CyrWheel02)
+parent_to_empties("marker3", Steve_CyrWheel02, Steve_CyrWheel03)
+parent_to_empties("marker4", Steve_CyrWheel03, Steve_CyrWheel04)
+parent_to_empties("marker5", Steve_CyrWheel04, Steve_CyrWheel05)
+    
