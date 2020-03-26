@@ -1,17 +1,11 @@
 import bpy, bmesh, csv
 from mathutils import Matrix, Vector, Euler
 
-#script to read tsv files in blender 
- 
-#-----------------------------------------------------------------------------------
-#open file (adjust file location)
-with open(r"C:\Users\jacki\OneDrive\Desktop\blender ring\steve.tsv", "r") as tsv_file:
-    file = list(csv.reader(tsv_file, delimiter='\t'))
-    #the data from frame 1
-    frame = 0
-    
-    # Create 2D array "arr" to hold all 3D coordinate info of markers
-    #numerical data begins in column 11
+#script to read tsv files in blender
+
+# Create 2D array "arr" to hold all 3D coordinate info of markers
+#numerical data begins in column 11
+def create_data_arr(frame):
     current_row = file[frame + 11]
     cols, rows = (3, int((len(current_row) - 2) / 3))
     arr = [[None]*cols for _ in range(rows)]
@@ -24,6 +18,17 @@ with open(r"C:\Users\jacki\OneDrive\Desktop\blender ring\steve.tsv", "r") as tsv
         if (count == 3):
             count = 0
             count_row += 1
+    return arr;
+ 
+#-----------------------------------------------------------------------------------
+#open file (adjust file location)
+with open(r"C:\Users\jacki\OneDrive\Desktop\blender ring\steve.tsv", "r") as tsv_file:
+    file = list(csv.reader(tsv_file, delimiter='\t'))
+    #the data from frame 1
+    frame = 0
+    arr = create_data_arr(frame)
+    
+
             
 #-----------------------------------------------------------------------------------
 #Create an array of marker names 
@@ -76,7 +81,6 @@ def add_child_bone(bone_name, parent_bone, empty):
     new_bone.parent = parent_bone
     #Set bone's location to wheel
     new_bone.matrix = empty.matrix_world
-    armature = bpy.data.objects["Armature.004"]
     new_bone.head =  parent_bone.tail
     new_bone.tail = empty.location
     return new_bone
@@ -108,6 +112,12 @@ root_bone.matrix = Steve_CyrWheel01.matrix_world
 root_bone.tail = Steve_CyrWheel01.location
 root_bone.head =  Steve_CyrWheel05.location
 
+#get armature object
+for ob in bpy.data.objects:
+    if ob.type == 'ARMATURE':
+        armature = ob
+        break
+
 #Add wheel bones to armature
 marker2 = add_child_bone('marker2', root_bone, Steve_CyrWheel02)
 marker3 = add_child_bone('marker3', marker2, Steve_CyrWheel03)
@@ -126,7 +136,7 @@ marker5 = add_child_bone('marker5', marker4, Steve_CyrWheel05)
 def parent_to_empties(bone_name, head, tail):
     bpy.ops.object.posemode_toggle()
     #Armature name is "Armature.004"
-    marker = bpy.data.objects["Armature.004"].data.bones[bone_name]
+    marker = armature.data.bones[bone_name]
     #Set marker selected
     marker.select = True
     #Set marker active
@@ -144,4 +154,30 @@ parent_to_empties("marker2", Steve_CyrWheel01, Steve_CyrWheel02)
 parent_to_empties("marker3", Steve_CyrWheel02, Steve_CyrWheel03)
 parent_to_empties("marker4", Steve_CyrWheel03, Steve_CyrWheel04)
 parent_to_empties("marker5", Steve_CyrWheel04, Steve_CyrWheel05)
+ 
+#-----------------------------------------------------------------------------------
+# Animate!
+#find number of frames in animation
+num_frames = len(file)
     
+#create a new handler to change empty positions every frame
+def my_handler(scene):
+    print("Frame Change", scene.frame_current)
+    #val = scene.objects['Cube'].location.x
+    #scene.objects['Sphere'].location.y = val + 1.6
+
+#register handler
+def register():
+    bpy.app.handlers.frame_change_post.append(my_handler)
+
+#unregister handler
+#def unregister():
+    #bpy.app.handlers.frame_change_post.remove(my_handler)
+    
+    #once frame number hits max, unregister
+    #read data from each frame 
+    #starting after frame 0, change position of empties on each frame 
+    #persistent handler?
+    #test
+    
+register()
