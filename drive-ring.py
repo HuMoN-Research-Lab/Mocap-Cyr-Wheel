@@ -22,13 +22,11 @@ def create_data_arr(frame):
  
 #-----------------------------------------------------------------------------------
 #open file (adjust file location)
-with open(r"C:\Users\jacki\OneDrive\Desktop\blender ring\steve.tsv", "r") as tsv_file:
+with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel-master/tsv files/WheelForcePlate.tsv", "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from frame 1
     frame = 0
     arr = create_data_arr(frame)
-    
-
             
 #-----------------------------------------------------------------------------------
 #Create an array of marker names 
@@ -79,11 +77,9 @@ def add_child_bone(bone_name, parent_bone, empty):
     #Set bone's size
     new_bone.head = (0,0,0)
     new_bone.tail = (0,0.5,0)
-    #Set bone's parent
-    new_bone.parent = parent_bone
     #Set bone's location to wheel
     new_bone.matrix = empty.matrix_world
-    new_bone.head =  parent_bone.tail
+    new_bone.head =  parent_bone.location
     new_bone.tail = empty.location
     return new_bone
 
@@ -121,11 +117,16 @@ for ob in bpy.data.objects:
         break
 
 #Add wheel bones to armature
-marker2 = add_child_bone('marker2', root_bone, Steve_CyrWheel02)
-marker3 = add_child_bone('marker3', marker2, Steve_CyrWheel03)
-marker4 = add_child_bone('marker4', marker3, Steve_CyrWheel04)
-marker5 = add_child_bone('marker5', marker4, Steve_CyrWheel05)
+marker2 = add_child_bone('marker2', Steve_CyrWheel01, Steve_CyrWheel02)
+marker3 = add_child_bone('marker3', Steve_CyrWheel02, Steve_CyrWheel03)
+marker4 = add_child_bone('marker4', Steve_CyrWheel03, Steve_CyrWheel04)
+marker5 = add_child_bone('marker5', Steve_CyrWheel04, Steve_CyrWheel05)
 
+root_bone.roll = 0
+marker2.roll = 0
+marker3.roll = 0
+marker4.roll = 0
+marker5.roll = 0
 #bone structure by empties
 #Root:    head = Steve_CyrWheel05, tail = Steve_CyrWheel01
 #marker2: head = Steve_CyrWheel01, tail = Steve_CyrWheel02
@@ -144,6 +145,11 @@ def parent_to_empties(bone_name, head, tail):
     #Set marker active
     bpy.context.object.data.bones.active = marker
     bone = bpy.context.object.pose.bones[bone_name]
+    bpy.ops.pose.constraint_add(type='LIMIT_ROTATION')
+    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].min_x = 0
+    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_x = True
+    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_y = True
+    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_z = True
     bpy.ops.pose.constraint_add(type='COPY_LOCATION')
     bone.constraints["Copy Location"].target = head
     bpy.ops.pose.constraint_add(type='STRETCH_TO')
@@ -178,29 +184,53 @@ def my_handler(scene):
     frame = scene.frame_current
     #get the list of marker points from the current frame
     markers_list = create_data_arr(frame - 1)
-    #iterate through list of markers in t
-    his frame
+    for bone in bpy.data.objects['Armature'].pose.bones:
+        print(bone.rotation_quaternion)
+        print(bone.rotation_quaternion[3])
+        bone.rotation_quaternion[0] = 0
+        bone.rotation_quaternion[1] = 0
+        bone.rotation_quaternion[2] = 0
+        bone.rotation_quaternion[3] = 0
+        print(bone.rotation_quaternion)
+    #iterate through list of markers in this frame
     for col in markers_list:
         if (col[0] and col[1] and col[2]):
             coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
             empty = order_of_markers[current_marker] 
             #change empty position : this is where the change in location every frame happens
             empty.location = coord
+            if "Wheel" in empty.name:
+                #prevent bones from rotating on the y axis for the wheel
+                empty.rotation_quaternion.y = 0
             #Set keyframes of the empty location at this frame to save the animation
             #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
             #increment counter of the number marker we are currently changing
         current_marker += 1 
-        #future... may want to continue to look into how to keyframe each bone in amrature
+    for bone in bpy.data.objects['Armature'].pose.bones:
+        print(bone.rotation_quaternion)
+        print(bone.rotation_quaternion[3])
+        bone.rotation_quaternion[0] = 0
+        bone.rotation_quaternion[1] = 0
+        bone.rotation_quaternion[2] = 0
+        bone.rotation_quaternion[3] = 0
+        print(bone.rotation_quaternion)
         if(current_marker == len(markers_list)):
             frames_seen += 1
             for bone in bpy.data.objects['Armature'].pose.bones:
+                print(bone.rotation_quaternion)
+                print(bone.rotation_quaternion[3])
+                bone.rotation_quaternion[0] = 0
+                bone.rotation_quaternion[1] = 0
+                bone.rotation_quaternion[2] = 0
+                bone.rotation_quaternion[3] = 0
+                print(bone.rotation_quaternion)
                 bpy.ops.pose.visual_transform_apply()
                 bone.keyframe_insert(data_path = 'location')
                 if bone.rotation_mode == "QUATERNION":
                     bone.keyframe_insert(data_path = 'rotation_quaternion')
                 else:
                     bone.keyframe_insert(data_path = 'rotation_euler')
-                bone.keyframe_insert(data_path = 'scale')
+                #bone.keyframe_insert(data_path = 'scale')
                 
 #function to register custom handler
 def register():
