@@ -137,7 +137,7 @@ marker5.roll = 0
 #parent heads and tails to empties
 #use bone constraints 
 def parent_to_empties(bone_name, head, tail):
-    bpy.ops.object.posemode_toggle()
+    bpy.ops.object.mode_set(mode='POSE')
     #Armature name is "Armature.004"
     marker = armature.data.bones[bone_name]
     #Set marker selected
@@ -145,11 +145,6 @@ def parent_to_empties(bone_name, head, tail):
     #Set marker active
     bpy.context.object.data.bones.active = marker
     bone = bpy.context.object.pose.bones[bone_name]
-    bpy.ops.pose.constraint_add(type='LIMIT_ROTATION')
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].min_x = 0
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_x = True
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_y = True
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_z = True
     bpy.ops.pose.constraint_add(type='COPY_LOCATION')
     bone.constraints["Copy Location"].target = head
     
@@ -160,6 +155,49 @@ parent_to_empties("marker3", Steve_CyrWheel02, Steve_CyrWheel03)
 parent_to_empties("marker4", Steve_CyrWheel03, Steve_CyrWheel04)
 parent_to_empties("marker5", Steve_CyrWheel04, Steve_CyrWheel05)
  
+ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
+ '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
+ '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
+ '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
+ '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
+ '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
+ '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
+ '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
+ '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
+ '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
+ '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
+ '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
+ '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
+ '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
+ '46Steve_CyrWheel05']
+
+ 
+ #bone structure by empties
+# https://github.com/CMU-Perceptual-Computing-Lab/openpose/raw/master/doc/media/keypoints_pose_25.png
+#bone0: head = 1, tail = 3
+#bone1: head = 3, tail = 2
+#bone2: head = 3, tail = 2
+#bone3: head = 12, tail = 13
+#bone4: head = 13, tail = 14
+#bone5: head = 14, tail = 21
+#bone6: head = 14, tail = 19
+#bone7: head = 19, tail = 20
+#bone8: head = 8, tail = 9
+#bone9: head = 9, tail = 10
+#bone10: head = 10, tail = 11
+#bone11: head = 11, tail = 24
+#bone12: head = 11, tail = 22
+#bone13: head = 22, tail = 23
+#bone14: head = 1, tail = 5
+#bone15: head = 5, tail = 6
+#bone16: head = 6, tail = 7
+#bone17: head = 1, tail = 2
+#bone18: head = 2, tail = 3
+#bone19: head = 3, tail = 4
+#bone20: head = 0, tail = 16
+#bone21: head = 16, tail = 18
+#bone22: head = 0, tail = 15
+#bone23: head = 15, tail = 17
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
