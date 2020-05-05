@@ -1,5 +1,7 @@
-import bpy, bmesh, csv
+import numpy as np, bpy, csv
 from mathutils import Matrix, Vector, Euler
+from math import *
+import time
 
 #script to read tsv files in blender
 
@@ -22,7 +24,7 @@ def create_data_arr(frame):
  
 #-----------------------------------------------------------------------------------
 #open file (adjust file location)
-with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel-master/tsv files/Handstands0009.tsv", "r") as tsv_file:
+with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/tsv files/Handstands0009.tsv", "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from frame 1
     frame = 0
@@ -90,15 +92,20 @@ bpy.context.view_layer.objects.active = armature_data
 armature_data.select_set(state=True)
 #Set edit mode
 bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-#Set bones In front and show axis
-armature_data.show_in_front = False
+#Set bones in front and show axis
+armature_data.show_in_front = True
+#True to show axis orientation of bones and false to hide it
 armature_data.data.show_axes = False
 
 #get armature object
-for ob in bpy.data.objects:
-    if ob.type == 'ARMATURE':
-        armature = ob
-        break
+def get_armature():
+    for ob in bpy.data.objects:
+        if ob.type == 'ARMATURE':
+            armature = ob
+            break
+    return armature
+
+armature = get_armature()
 
 
 #bone structure by empties
@@ -107,27 +114,15 @@ for ob in bpy.data.objects:
 #marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
 #marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
 #marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
+    
 
-#parent heads and tails to empties
-#use bone constraints 
-def parent_to_empties(bone_name, head, tail):
-    #enter pose mode
-    bpy.ops.object.posemode_toggle()
-    marker = armature.data.bones[bone_name]
-    #Set marker selected
-    marker.select = True
-    #Set marker active
-    bpy.context.object.data.bones.active = marker
-    bone = bpy.context.object.pose.bones[bone_name]
-    #Copy Location Pose constraint: makes the bone's head follow the given empty
-    bpy.ops.pose.constraint_add(type='COPY_LOCATION')
-    bone.constraints["Copy Location"].target = head
-    #Stretch To Pose constraint: makes the bone's tail follow the given empty
-    #stretches the bones to reach the tail to that empty so head location is not affected
-    bpy.ops.pose.constraint_add(type='STRETCH_TO')
-    bone.constraints["Stretch To"].target = tail
-    #exit pose mode
-    bpy.ops.object.posemode_toggle()
+#get armature object
+def get_armature():
+    for ob in bpy.data.objects:
+        if ob.type == 'ARMATURE':
+            armature = ob
+            break
+    return armature
     
 
 '''
@@ -237,6 +232,27 @@ def tuple_to_armature(bones):
 tuple_to_armature(list_of_bones_order)
 
 
+#parent heads and tails to empties
+#use bone constraints 
+def parent_to_empties(bone_name, head, tail):
+    #enter pose mode
+    bpy.ops.object.posemode_toggle()
+    marker = armature.data.bones[bone_name]
+    #Set marker selected
+    marker.select = True
+    #Set marker active
+    bpy.context.object.data.bones.active = marker
+    bone = bpy.context.object.pose.bones[bone_name]
+    #Copy Location Pose constraint: makes the bone's head follow the given empty
+    bpy.ops.pose.constraint_add(type='COPY_LOCATION')
+    bone.constraints["Copy Location"].target = head
+    #Stretch To Pose constraint: makes the bone's tail follow the given empty
+    #stretches the bones to reach the tail to that empty so head location is not affected
+    bpy.ops.pose.constraint_add(type='STRETCH_TO')
+    bone.constraints["Stretch To"].target = tail
+    #exit pose mode
+    bpy.ops.object.posemode_toggle()
+    
 #set parents of heads and tails for each bone 
 def tuple_to_parented(bones):
     for bone_name, bone_head, bone_tail in bones:
@@ -286,6 +302,149 @@ def my_handler(scene):
             else:
                 bone.keyframe_insert(data_path = 'rotation_euler')
             #bone.keyframe_insert(data_path = 'scale')
+
+
+#script to create a mesh of the armature 
+def CreateMesh():
+    obj = get_armature()
+
+    if obj == None:
+        print( "No selection" )
+    elif obj.type != 'ARMATURE':
+        print( "Armature expected" )
+    else:
+        return processArmature( bpy.context, obj )
+
+#Use armature to create base object
+def armToMesh( arm ):
+    name = arm.name + "_mesh"
+    dataMesh = bpy.data.meshes.new( name + "Data" )
+    mesh = bpy.data.objects.new( name, dataMesh )
+    mesh.matrix_world = arm.matrix_world.copy()
+    return mesh
+
+#Make vertices and faces 
+def boneGeometry( l1, l2, x, z, baseSize, l1Size, l2Size, base ):
+    x1 = x * baseSize * l1Size 
+    z1 = z * baseSize * l1Size
+    
+    x2 = Vector( (0, 0, 0) )
+    z2 = Vector( (0, 0, 0) )
+
+    verts = [
+        l1 - x1 + z1,
+        l1 + x1 + z1,
+        l1 - x1 - z1,
+        l1 + x1 - z1,
+        l2 - x2 + z2,
+        l2 + x2 + z2,
+        l2 - x2 - z2,
+        l2 + x2 - z2
+        ] 
+
+    faces = [
+        (base+3, base+1, base+0, base+2),
+        (base+6, base+4, base+5, base+7),
+        (base+4, base+0, base+1, base+5),
+        (base+7, base+3, base+2, base+6),
+        (base+5, base+1, base+3, base+7),
+        (base+6, base+2, base+0, base+4)
+        ]
+
+    return verts, faces
+
+#Process the armature, goes through its bones and creates the mesh
+def processArmature(context, arm, genVertexGroups = True):
+    print("processing {0}".format(arm.name))
+
+    #Creates the mesh object
+    meshObj = armToMesh( arm )
+    context.collection.objects.link( meshObj )
+
+    verts = []
+    edges = []
+    faces = []
+    vertexGroups = {}
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    try:
+        #Goes through each bone
+        for editBone in arm.data.edit_bones:
+            boneName = editBone.name
+            print( boneName )
+            poseBone = arm.pose.bones[boneName]
+
+            #Gets edit bone informations
+            editBoneHead = editBone.head
+            editBoneTail = editBone.tail
+            editBoneVector = editBoneTail - editBoneHead
+            editBoneSize = editBoneVector.dot( editBoneVector )
+            editBoneRoll = editBone.roll
+            editBoneX = editBone.x_axis
+            editBoneZ = editBone.z_axis
+            editBoneHeadRadius = editBone.head_radius
+            editBoneTailRadius = editBone.tail_radius
+
+            #Creates the mesh data for the bone
+            baseIndex = len(verts)
+            baseSize = sqrt( editBoneSize )
+            newVerts, newFaces = boneGeometry( editBoneHead, editBoneTail, editBoneX, editBoneZ, baseSize, editBoneHeadRadius, editBoneTailRadius, baseIndex )
+
+            verts.extend( newVerts )
+            faces.extend( newFaces )
+
+            #Creates the weights for the vertex groups
+            vertexGroups[boneName] = [(x, 1.0) for x in range(baseIndex, len(verts))]
+
+        #Assigns the geometry to the mesh
+        meshObj.data.from_pydata(verts, edges, faces)
+
+    except:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    else:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    #Assigns the vertex groups
+    if genVertexGroups:
+        for name1, vertexGroup in vertexGroups.items():
+            groupObject = meshObj.vertex_groups.new(name = name1)
+            for (index, weight) in vertexGroup:
+                groupObject.add([index], weight, 'REPLACE')
+
+    #Creates the armature modifier
+    modifier = meshObj.modifiers.new('ArmatureMod', 'ARMATURE')
+    modifier.object = arm
+    modifier.use_bone_envelopes = False
+    modifier.use_vertex_groups = True
+
+    meshObj.data.update()
+
+    return meshObj
+
+mesh_obob = CreateMesh()
+
+#-----------------------------------------------------------------------------------
+# Clean up the mesh by removing duplicate vertices, make sure all faces are quads, etc
+
+checked = set()
+for selected_object in bpy.data.objects:
+    if selected_object.type != 'MESH':
+        continue
+    meshdata = selected_object.data
+    if meshdata in checked:
+        continue
+    else:
+        checked.add(meshdata)
+    bpy.context.view_layer.objects.active = selected_object
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.remove_doubles()
+    bpy.ops.mesh.tris_convert_to_quads()
+    bpy.ops.mesh.normals_make_consistent()
+    bpy.ops.object.editmode_toggle()
+#Set armature active
+bpy.context.view_layer.objects.active = armature_data
+#Set armature selected
+armature_data.select_set(state=True)
                 
                 
 bpy.app.handlers.frame_change_post.clear()
