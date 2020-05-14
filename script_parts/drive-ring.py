@@ -22,7 +22,7 @@ def create_data_arr(frame):
  
 #-----------------------------------------------------------------------------------
 #open file (adjust file location)
-with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel-master/tsv files/WheelForcePlate.tsv", "r") as tsv_file:
+with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv", "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from frame 1
     frame = 0
@@ -137,7 +137,7 @@ marker5.roll = 0
 #parent heads and tails to empties
 #use bone constraints 
 def parent_to_empties(bone_name, head, tail):
-    bpy.ops.object.posemode_toggle()
+    bpy.ops.object.mode_set(mode='POSE')
     #Armature name is "Armature.004"
     marker = armature.data.bones[bone_name]
     #Set marker selected
@@ -145,11 +145,6 @@ def parent_to_empties(bone_name, head, tail):
     #Set marker active
     bpy.context.object.data.bones.active = marker
     bone = bpy.context.object.pose.bones[bone_name]
-    bpy.ops.pose.constraint_add(type='LIMIT_ROTATION')
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].min_x = 0
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_x = True
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_y = True
-    bpy.context.object.pose.bones[bone_name].constraints["Limit Rotation"].use_limit_z = True
     bpy.ops.pose.constraint_add(type='COPY_LOCATION')
     bone.constraints["Copy Location"].target = head
     
