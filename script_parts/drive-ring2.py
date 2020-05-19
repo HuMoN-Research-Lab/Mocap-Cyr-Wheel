@@ -125,16 +125,25 @@ for tracker in bpy.data.objects:
         #resize the bone
         new_bone.head = (0,0,0)
         new_bone.tail = (0,0.5,0)
-        bpy.ops.object.posemode_toggle()
+        bpy.ops.object.mode_set(mode='POSE')
         marker = armature.data.bones["bone" + str(iter)]
         #Set marker selected
         marker.select = True
         #Set marker active
         bpy.context.object.data.bones.active = marker
-        bone = bpy.context.object.pose.bones[str(new_bone.name)]
+        bone = bpy.context.object.pose.bones["bone" + str(iter)]
         bpy.ops.pose.constraint_add(type='COPY_LOCATION')
         bone.constraints["Copy Location"].target = tracker
+        iter += 1
 
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+#Add a bone
+new_bone = armature_data.data.edit_bones.new("boneblah")
+#resize the bone
+new_bone.head = (0,0,0)
+new_bone.tail = (0,0.5,0)
+
+bpy.ops.object.mode_set(mode='POSE')
 marker = armature.data.bones["bone0"]
 marker.select = True
 bpy.context.object.data.bones.active = marker
@@ -142,46 +151,102 @@ bone = bpy.context.object.pose.bones["bone0"]
 bpy.ops.pose.constraint_add(type='TRACK_TO')
 bone.constraints["Track To"].target = order[1]
 bone.constraints["Track To"].up_axis = 'UP_Z'
+bpy.ops.pose.constraint_add(type='COPY_ROTATION')
+bpy.context.object.pose.bones["bone0"].constraints["Copy Rotation"].target = order[1]
+bpy.context.object.pose.bones["bone0"].constraints["Copy Rotation"].use_x = False
+bpy.context.object.pose.bones["bone0"].constraints["Copy Rotation"].use_z = False
 
-marker = armature.data.bones["bone0.001"]
+
+marker = armature.data.bones["bone1"]
 marker.select = True
 bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone0.001"]
+bone = bpy.context.object.pose.bones["bone1"]
 bpy.ops.pose.constraint_add(type='TRACK_TO')
 bone.constraints["Track To"].target = order[2]
 bone.constraints["Track To"].up_axis = 'UP_Z'
+bpy.ops.pose.constraint_add(type='COPY_ROTATION')
+bpy.context.object.pose.bones["bone1"].constraints["Copy Rotation"].target = order[2]
+bpy.context.object.pose.bones["bone1"].constraints["Copy Rotation"].use_x = False
+bpy.context.object.pose.bones["bone1"].constraints["Copy Rotation"].use_z = False
 
-marker = armature.data.bones["bone0.002"]
+marker = armature.data.bones["boneblah"]
 marker.select = True
 bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone0.002"]
+bone = bpy.context.object.pose.bones["boneblah"]
+bpy.ops.pose.constraint_add(type='COPY_LOCATION')
+bone.constraints["Copy Location"].target = order[1]
+bpy.ops.pose.constraint_add(type='COPY_ROTATION')
+bpy.context.object.pose.bones["boneblah"].constraints["Copy Rotation"].target = armature
+bpy.context.object.pose.bones["boneblah"].constraints["Copy Rotation"].subtarget = "bone1"
+
+marker = armature.data.bones["bone2"]
+marker.select = True
+bpy.context.object.data.bones.active = marker
+bone = bpy.context.object.pose.bones["bone2"]
 bpy.ops.pose.constraint_add(type='TRACK_TO')
 bone.constraints["Track To"].target = order[3]
 bone.constraints["Track To"].up_axis = 'UP_Z'
+bpy.ops.pose.constraint_add(type='COPY_ROTATION')
+bpy.context.object.pose.bones["bone2"].constraints["Copy Rotation"].target = order[3]
+bpy.context.object.pose.bones["bone2"].constraints["Copy Rotation"].use_x = False
+bpy.context.object.pose.bones["bone2"].constraints["Copy Rotation"].use_z = False
 
-marker = armature.data.bones["bone0.003"]
+
+marker = armature.data.bones["bone3"]
 marker.select = True
 bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone0.003"]
+bone = bpy.context.object.pose.bones["bone3"]
 bpy.ops.pose.constraint_add(type='TRACK_TO')
 bone.constraints["Track To"].target = order[4]
 bone.constraints["Track To"].up_axis = 'UP_Z'
+bpy.ops.pose.constraint_add(type='COPY_ROTATION')
+bpy.context.object.pose.bones["bone3"].constraints["Copy Rotation"].target = order[4]
+bpy.context.object.pose.bones["bone3"].constraints["Copy Rotation"].use_x = False
+bpy.context.object.pose.bones["bone3"].constraints["Copy Rotation"].use_z = False
 
-marker = armature.data.bones["bone0.004"]
+marker = armature.data.bones["bone4"]
 marker.select = True
 bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone0.004"]
+bone = bpy.context.object.pose.bones["bone4"]
 bpy.ops.pose.constraint_add(type='TRACK_TO')
 bone.constraints["Track To"].target = order[0]
 bone.constraints["Track To"].up_axis = 'UP_Z'
+bpy.ops.pose.constraint_add(type='COPY_ROTATION')
+bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].target = order[0]
+bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].use_x = False
+bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].use_z = False
 
+'''
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+marker.select = True
+bpy.context.object.data.bones.active = marker
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.001"].object = bpy.data.objects["Steve_CyrWheel03"]
+bpy.context.object.modifiers["Hook.001"].vertex_group = "empty3"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.002"].object = bpy.data.objects["Steve_CyrWheel01"]
+bpy.context.object.modifiers["Hook.002"].vertex_group = "empty1"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.003"].object = bpy.data.objects["Steve_CyrWheel02"]
+bpy.context.object.modifiers["Hook.003"].vertex_group = "empty2"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel04"]
+bpy.context.object.modifiers["Hook.004"].vertex_group = "empty4"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.005"].object = bpy.data.objects["Steve_CyrWheel05"]
+bpy.context.object.modifiers["Hook.005"].vertex_group = "empty5"
 #bone structure by empties
 #Root:    head = Steve_CyrWheel05, tail = Steve_CyrWheel01
 #marker2: head = Steve_CyrWheel01, tail = Steve_CyrWheel02
 #marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
 #marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
 #marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
- 
+ '''
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation

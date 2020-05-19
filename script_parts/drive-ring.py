@@ -121,6 +121,8 @@ marker2 = add_child_bone('marker2', Steve_CyrWheel01, Steve_CyrWheel02)
 marker3 = add_child_bone('marker3', Steve_CyrWheel02, Steve_CyrWheel03)
 marker4 = add_child_bone('marker4', Steve_CyrWheel03, Steve_CyrWheel04)
 marker5 = add_child_bone('marker5', Steve_CyrWheel04, Steve_CyrWheel05)
+marker6 = add_child_bone('marker6', Steve_CyrWheel01, Steve_CyrWheel04)
+marker7 = add_child_bone('marker7', Steve_CyrWheel03, Steve_CyrWheel05)
 
 root_bone.roll = 0
 marker2.roll = 0
@@ -137,28 +139,41 @@ marker5.roll = 0
 #parent heads and tails to empties
 #use bone constraints 
 def parent_to_empties(bone_name, head, tail):
-    bpy.ops.object.mode_set(mode='POSE')
-    #Armature name is "Armature.004"
+    #enter pose mode
+    bpy.ops.object.posemode_toggle()
     marker = armature.data.bones[bone_name]
     #Set marker selected
     marker.select = True
     #Set marker active
     bpy.context.object.data.bones.active = marker
     bone = bpy.context.object.pose.bones[bone_name]
+    #Copy Location Pose constraint: makes the bone's head follow the given empty
     bpy.ops.pose.constraint_add(type='COPY_LOCATION')
     bone.constraints["Copy Location"].target = head
-    
+    #Stretch To Pose constraint: makes the bone's tail follow the given empty
+    #stretches the bones to reach the tail to that empty so head location is not affected
+    #bpy.ops.pose.constraint_add(type='STRETCH_TO')
+    #bone.constraints["Stretch To"].target = tail
+    bpy.ops.pose.constraint_add(type='IK')
+    bone.constraints["IK"].name = "IK"
+    bone.constraints["IK"].target = bpy.data.objects["Armature"]
+    bone.constraints["IK"].pole_target = tail
+    #exit pose mode
+    bpy.ops.object.posemode_toggle()
+
+'''
 #set parents of heads and tails for each bone 
 parent_to_empties("Root", Steve_CyrWheel05, Steve_CyrWheel01)
 parent_to_empties("marker2", Steve_CyrWheel01, Steve_CyrWheel02)
 parent_to_empties("marker3", Steve_CyrWheel02, Steve_CyrWheel03)
 parent_to_empties("marker4", Steve_CyrWheel03, Steve_CyrWheel04)
 parent_to_empties("marker5", Steve_CyrWheel04, Steve_CyrWheel05)
- 
+parent_to_empties("marker6", Steve_CyrWheel01, Steve_CyrWheel04)
+parent_to_empties("marker7", Steve_CyrWheel03, Steve_CyrWheel05)
+'''
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
-
 
 num_frames = len(file) - 11
 
