@@ -114,7 +114,7 @@ for ob in bpy.data.objects:
     
     
 iter = 0
-
+'''
 #iterate through each object in this blender project
 for tracker in bpy.data.objects:
     #if the object is an empty
@@ -216,7 +216,7 @@ bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].target = ord
 bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].use_x = False
 bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].use_z = False
 
-'''
+
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
 marker.select = True
@@ -246,7 +246,95 @@ bpy.context.object.modifiers["Hook.005"].vertex_group = "empty5"
 #marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
 #marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
 #marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
- '''
+
+
+
+'''
+
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+mesh = bpy.data.meshes.new("myBeautifulMesh")  # add the new mesh
+obj = bpy.data.objects.new("MyObject", mesh)
+col = bpy.data.collections.get("Collection")
+col.objects.link(obj)
+bpy.context.view_layer.objects.active = obj
+
+verts = [order[0].location, 
+         order[1].location,
+         order[2].location,
+         order[3].location,
+         order[4].location
+         ]  # 4 verts made with XYZ coords
+edges = []
+faces = [[0, 1, 2, 3, 4]]
+
+mesh.from_pydata(verts, [], faces)
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+bpy.context.view_layer.objects.active = obj
+obj.select_set(state=True)
+bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+
+
+'''
+verts = [order[0].location, 
+         order[1].location,
+         order[2].location,
+         order[3].location,
+         order[4].location
+         ]  # 2 verts made with XYZ coords
+mesh = bpy.data.meshes.new("myBeautifulMesh")  # add a new mesh
+obj = bpy.data.objects.new("MyObject", mesh)  # add a new object using the mesh
+
+bpy.context.collection.objects.link(obj)  # put the object into the scene (link)
+#Set armature active
+bpy.context.view_layer.objects.active = obj
+#Set armature selected
+obj.select_set(state=True)
+
+mesh = bpy.context.object.data
+bm = bmesh.new()
+
+for v in verts:
+    bm.verts.new(v)  # add a new vert
+
+# make the bmesh the object's mesh
+bm.to_mesh(mesh)  
+bm.free()  # always do this when finished
+
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+marker.select = True
+bpy.context.object.data.bones.active = marker
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.001"].object = bpy.data.objects["Steve_CyrWheel03"]
+bpy.context.object.modifiers["Hook.001"].vertex_group = "empty3"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.002"].object = bpy.data.objects["Steve_CyrWheel01"]
+bpy.context.object.modifiers["Hook.002"].vertex_group = "empty1"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.003"].object = bpy.data.objects["Steve_CyrWheel02"]
+bpy.context.object.modifiers["Hook.003"].vertex_group = "empty2"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel04"]
+bpy.context.object.modifiers["Hook.004"].vertex_group = "empty4"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.005"].object = bpy.data.objects["Steve_CyrWheel05"]
+bpy.context.object.modifiers["Hook.005"].vertex_group = "empty5"
+'''
+
+for obj in bpy.context.scene.objects:
+    if obj.name.startswith("Torus"):
+        ring = obj
+    
+### set the relation to foot
+ring.parent = obj
+ring.parent_type = 'VERTEX_3'
+n = len(obj.data.vertices)
+ring.parent_vertices = range(1, 4)
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
@@ -260,6 +348,10 @@ bpy.context.scene.frame_end = num_frames
 #create a new handler to change empty positions every frame
 def my_handler(scene): 
     frames_seen = 0
+    #Set armature active
+    bpy.context.view_layer.objects.active = armature_data
+    #Set armature selected
+    armature_data.select_set(state=True)
     #must be in pose mode to set keyframes
     bpy.ops.object.mode_set(mode='POSE')
     #keep track of current_marker
@@ -271,6 +363,12 @@ def my_handler(scene):
     #get the list of marker points from the current frame
     markers_list = create_data_arr(frame - 1)
     #iterate through list of markers in this frame
+    print("plane")
+    for obj in bpy.context.scene.objects:
+        if obj.name.startswith("Torus"):
+            mesh = obj
+    print(mesh.matrix_world.to_translation())
+    print(mesh.matrix_world.to_euler())
     for col in markers_list:
         if (col[0] and col[1] and col[2]):
             coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
@@ -281,15 +379,6 @@ def my_handler(scene):
             #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
             #increment counter of the number marker we are currently changing
         current_marker += 1 
-        if(current_marker == len(markers_list)):
-            frames_seen += 1
-            bpy.ops.pose.visual_transform_apply()
-            bone.keyframe_insert(data_path = 'location')
-            if bone.rotation_mode == "QUATERNION":
-                bone.keyframe_insert(data_path = 'rotation_quaternion')
-            else:
-                bone.keyframe_insert(data_path = 'rotation_euler')
-            #bone.keyframe_insert(data_path = 'scale')
                 
 #function to register custom handler
 def register():
