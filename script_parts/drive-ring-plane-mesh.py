@@ -60,7 +60,8 @@ for col in arr:
     order_of_markers.append(mt)
     #sanity check
     print(coord)
-    
+
+#all of the wheel markers
 Steve_CyrWheel01 = bpy.data.objects.get('Steve_CyrWheel01')
 Steve_CyrWheel02 = bpy.data.objects.get('Steve_CyrWheel02')
 Steve_CyrWheel03 = bpy.data.objects.get('Steve_CyrWheel03')
@@ -112,145 +113,9 @@ for ob in bpy.data.objects:
         armature = ob
         break
     
-    
 iter = 0
-'''
-#iterate through each object in this blender project
-for tracker in bpy.data.objects:
-    #if the object is an empty
-    if tracker.type == 'EMPTY' and ("Wheel" in tracker.name):
-        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-        #Add a bone
-        new_bone = armature_data.data.edit_bones.new("bone" + str(iter))
-        #resize the bone
-        new_bone.head = (0,0,0)
-        new_bone.tail = (0,0.5,0)
-        bpy.ops.object.mode_set(mode='POSE')
-        marker = armature.data.bones["bone" + str(iter)]
-        #Set marker selected
-        marker.select = True
-        #Set marker active
-        bpy.context.object.data.bones.active = marker
-        bone = bpy.context.object.pose.bones["bone" + str(iter)]
-        bpy.ops.pose.constraint_add(type='COPY_LOCATION')
-        bone.constraints["Copy Location"].target = tracker
-        iter += 1
 
-bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-#Add a bone
-new_bone = armature_data.data.edit_bones.new("boneblah")
-#resize the bone
-new_bone.head = (0,0,0)
-new_bone.tail = (0,0.5,0)
-
-bpy.ops.object.mode_set(mode='POSE')
-marker = armature.data.bones["bone0"]
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone0"]
-bpy.ops.pose.constraint_add(type='TRACK_TO')
-bone.constraints["Track To"].target = order[1]
-bone.constraints["Track To"].up_axis = 'UP_Z'
-bpy.ops.pose.constraint_add(type='COPY_ROTATION')
-bpy.context.object.pose.bones["bone0"].constraints["Copy Rotation"].target = order[1]
-bpy.context.object.pose.bones["bone0"].constraints["Copy Rotation"].use_x = False
-bpy.context.object.pose.bones["bone0"].constraints["Copy Rotation"].use_z = False
-
-
-marker = armature.data.bones["bone1"]
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone1"]
-bpy.ops.pose.constraint_add(type='TRACK_TO')
-bone.constraints["Track To"].target = order[2]
-bone.constraints["Track To"].up_axis = 'UP_Z'
-bpy.ops.pose.constraint_add(type='COPY_ROTATION')
-bpy.context.object.pose.bones["bone1"].constraints["Copy Rotation"].target = order[2]
-bpy.context.object.pose.bones["bone1"].constraints["Copy Rotation"].use_x = False
-bpy.context.object.pose.bones["bone1"].constraints["Copy Rotation"].use_z = False
-
-marker = armature.data.bones["boneblah"]
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["boneblah"]
-bpy.ops.pose.constraint_add(type='COPY_LOCATION')
-bone.constraints["Copy Location"].target = order[1]
-bpy.ops.pose.constraint_add(type='COPY_ROTATION')
-bpy.context.object.pose.bones["boneblah"].constraints["Copy Rotation"].target = armature
-bpy.context.object.pose.bones["boneblah"].constraints["Copy Rotation"].subtarget = "bone1"
-
-marker = armature.data.bones["bone2"]
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone2"]
-bpy.ops.pose.constraint_add(type='TRACK_TO')
-bone.constraints["Track To"].target = order[3]
-bone.constraints["Track To"].up_axis = 'UP_Z'
-bpy.ops.pose.constraint_add(type='COPY_ROTATION')
-bpy.context.object.pose.bones["bone2"].constraints["Copy Rotation"].target = order[3]
-bpy.context.object.pose.bones["bone2"].constraints["Copy Rotation"].use_x = False
-bpy.context.object.pose.bones["bone2"].constraints["Copy Rotation"].use_z = False
-
-
-marker = armature.data.bones["bone3"]
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone3"]
-bpy.ops.pose.constraint_add(type='TRACK_TO')
-bone.constraints["Track To"].target = order[4]
-bone.constraints["Track To"].up_axis = 'UP_Z'
-bpy.ops.pose.constraint_add(type='COPY_ROTATION')
-bpy.context.object.pose.bones["bone3"].constraints["Copy Rotation"].target = order[4]
-bpy.context.object.pose.bones["bone3"].constraints["Copy Rotation"].use_x = False
-bpy.context.object.pose.bones["bone3"].constraints["Copy Rotation"].use_z = False
-
-marker = armature.data.bones["bone4"]
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bone = bpy.context.object.pose.bones["bone4"]
-bpy.ops.pose.constraint_add(type='TRACK_TO')
-bone.constraints["Track To"].target = order[0]
-bone.constraints["Track To"].up_axis = 'UP_Z'
-bpy.ops.pose.constraint_add(type='COPY_ROTATION')
-bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].target = order[0]
-bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].use_x = False
-bpy.context.object.pose.bones["bone4"].constraints["Copy Rotation"].use_z = False
-
-
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-
-marker.select = True
-bpy.context.object.data.bones.active = marker
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.001"].object = bpy.data.objects["Steve_CyrWheel03"]
-bpy.context.object.modifiers["Hook.001"].vertex_group = "empty3"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.002"].object = bpy.data.objects["Steve_CyrWheel01"]
-bpy.context.object.modifiers["Hook.002"].vertex_group = "empty1"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.003"].object = bpy.data.objects["Steve_CyrWheel02"]
-bpy.context.object.modifiers["Hook.003"].vertex_group = "empty2"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel04"]
-bpy.context.object.modifiers["Hook.004"].vertex_group = "empty4"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.005"].object = bpy.data.objects["Steve_CyrWheel05"]
-bpy.context.object.modifiers["Hook.005"].vertex_group = "empty5"
-#bone structure by empties
-#Root:    head = Steve_CyrWheel05, tail = Steve_CyrWheel01
-#marker2: head = Steve_CyrWheel01, tail = Steve_CyrWheel02
-#marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
-#marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
-#marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
-
-
-
-'''
-
+#create a plane mesh connecting the wheel markers
 bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 mesh = bpy.data.meshes.new("myBeautifulMesh")  # add the new mesh
 obj = bpy.data.objects.new("MyObject", mesh)
@@ -258,73 +123,71 @@ col = bpy.data.collections.get("Collection")
 col.objects.link(obj)
 bpy.context.view_layer.objects.active = obj
 
+ # 5 verts made with XYZ coords
 verts = [order[0].location, 
          order[1].location,
          order[2].location,
          order[3].location,
          order[4].location
-         ]  # 4 verts made with XYZ coords
+         ] 
 edges = []
 faces = [[0, 1, 2, 3, 4]]
 
+#Create the mesh with the vertices and faces
 mesh.from_pydata(verts, [], faces)
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
+#Set origin of the plane to its median center
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
+#Create vertex groups, one for each vertex
+vg = obj.vertex_groups.new(name="group0")
+vg.add([0], 1, "ADD")
+
+vg = obj.vertex_groups.new(name="group1")
+vg.add([1], 1, "ADD")
+
+vg = obj.vertex_groups.new(name="group2")
+vg.add([2], 1, "ADD")
+
+vg = obj.vertex_groups.new(name="group3")
+vg.add([3], 1, "ADD")
+
+vg = obj.vertex_groups.new(name="group4")
+vg.add([4], 1, "ADD")
+
+for x in bpy.context.scene.objects:
+        if x.name.startswith("Torus"):
+            ring = x
+
+obj.location = ring.location
 
 
-'''
-verts = [order[0].location, 
-         order[1].location,
-         order[2].location,
-         order[3].location,
-         order[4].location
-         ]  # 2 verts made with XYZ coords
-mesh = bpy.data.meshes.new("myBeautifulMesh")  # add a new mesh
-obj = bpy.data.objects.new("MyObject", mesh)  # add a new object using the mesh
-
-bpy.context.collection.objects.link(obj)  # put the object into the scene (link)
-#Set armature active
-bpy.context.view_layer.objects.active = obj
-#Set armature selected
-obj.select_set(state=True)
-
-mesh = bpy.context.object.data
-bm = bmesh.new()
-
-for v in verts:
-    bm.verts.new(v)  # add a new vert
-
-# make the bmesh the object's mesh
-bm.to_mesh(mesh)  
-bm.free()  # always do this when finished
 
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
-marker.select = True
-bpy.context.object.data.bones.active = marker
+obj.select_set(True)
+bpy.context.view_layer.objects.active = obj
 bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.001"].object = bpy.data.objects["Steve_CyrWheel03"]
-bpy.context.object.modifiers["Hook.001"].vertex_group = "empty3"
+bpy.context.object.modifiers["Hook"].object = bpy.data.objects["Steve_CyrWheel01"]
+bpy.context.object.modifiers["Hook"].vertex_group = "group0"
 
 bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.002"].object = bpy.data.objects["Steve_CyrWheel01"]
-bpy.context.object.modifiers["Hook.002"].vertex_group = "empty1"
+bpy.context.object.modifiers["Hook.001"].object = bpy.data.objects["Steve_CyrWheel02"]
+bpy.context.object.modifiers["Hook.001"].vertex_group = "group1"
 
 bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.003"].object = bpy.data.objects["Steve_CyrWheel02"]
-bpy.context.object.modifiers["Hook.003"].vertex_group = "empty2"
+bpy.context.object.modifiers["Hook.002"].object = bpy.data.objects["Steve_CyrWheel03"]
+bpy.context.object.modifiers["Hook.002"].vertex_group = "group2"
 
 bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel04"]
-bpy.context.object.modifiers["Hook.004"].vertex_group = "empty4"
+bpy.context.object.modifiers["Hook.003"].object = bpy.data.objects["Steve_CyrWheel04"]
+bpy.context.object.modifiers["Hook.003"].vertex_group = "group3"
 
 bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.005"].object = bpy.data.objects["Steve_CyrWheel05"]
-bpy.context.object.modifiers["Hook.005"].vertex_group = "empty5"
-'''
+bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel05"]
+bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
 
 for obj in bpy.context.scene.objects:
     if obj.name.startswith("Torus"):
