@@ -1,4 +1,5 @@
 import bpy, bmesh, csv
+import numpy as np
 from mathutils import Matrix, Vector, Euler
 
 #script to read tsv files in blender
@@ -139,7 +140,8 @@ bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
 #Set origin of the plane to its median center
-bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+
 
 #Create vertex groups, one for each vertex
 vg = obj.vertex_groups.new(name="group0")
@@ -161,11 +163,63 @@ for x in bpy.context.scene.objects:
         if x.name.startswith("Torus"):
             ring = x
 
-obj.location = ring.location
+for y in bpy.context.scene.objects:
+        if y.name.startswith("MyObject_copy"):
+            copy = y
 
 
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+bpy.context.view_layer.objects.active = obj
+obj.select_set(state=True)
+'''
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+#bpy.ops.transform.rotate(value=0, orient_axis='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, release_confirm=True)
+bpy.ops.transform.rotate(value=1.5708, orient_axis='Z', orient_type='VIEW', orient_matrix=((0.345287, -0.938497, -6.07222e-07), (0.159741, 0.0587715, -0.985408), (-0.924803, -0.340248, -0.170209)), orient_matrix_type='VIEW', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, release_confirm=True)
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+obj.location = copy.location
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+
+'''
+### set the relation to foot
+ring.parent = obj
+ring.parent_type = 'VERTEX_3'
+n = len(obj.data.vertices)
+ring.parent_vertices = range(1, 4)
+
+'''
+location_array = [[order[0].location[0], order[0].location[1], order[0].location[2]], 
+[order[1].location[0], order[1].location[1], order[1].location[2]], 
+[order[2].location[0], order[2].location[1], order[2].location[2]],
+[order[3].location[0], order[3].location[1], order[3].location[2]],
+[order[4].location[0], order[4].location[1], order[4].location[2]]]
+data = np.array(location_array)
+new_location = np.average(data, axis=0)
+new_location_vector = Vector((new_location[0], new_location[1], new_location[2]))
+
+# Convert local coorinates to world coordinates before assignment
+obj.data.vertices[0].co.xyz = order[0].matrix_world.to_translation()
+obj.data.vertices[1].co.xyz = order[1].matrix_world.to_translation()
+obj.data.vertices[2].co.xyz = order[2].matrix_world.to_translation()
+obj.data.vertices[3].co.xyz = order[3].matrix_world.to_translation()
+obj.data.vertices[4].co.xyz = order[4].matrix_world.to_translation()
+bpy.context.view_layer.objects.active = obj
+obj.select_set(state=True)
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+
+
+obj.location = new_location_vector
+bpy.context.view_layer.objects.active = obj
+obj.select_set(state=True)
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+
+'''
+bpy.context.view_layer.objects.active = ring
+ring.select_set(state=True)
+bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
 
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
 
 obj.select_set(True)
 bpy.context.view_layer.objects.active = obj
@@ -189,15 +243,6 @@ bpy.ops.object.modifier_add(type='HOOK')
 bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel05"]
 bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
 
-for obj in bpy.context.scene.objects:
-    if obj.name.startswith("Torus"):
-        ring = obj
-    
-### set the relation to foot
-ring.parent = obj
-ring.parent_type = 'VERTEX_3'
-n = len(obj.data.vertices)
-ring.parent_vertices = range(1, 4)
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
