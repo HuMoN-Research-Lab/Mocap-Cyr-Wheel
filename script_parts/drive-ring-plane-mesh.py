@@ -1,5 +1,4 @@
 import bpy, bmesh, csv
-import numpy as np
 from mathutils import Matrix, Vector, Euler
 
 #script to read tsv files in blender
@@ -23,7 +22,7 @@ def create_data_arr(frame):
  
 #-----------------------------------------------------------------------------------
 #open file (adjust file location)
-with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel-master/tsv files/WheelForcePlate.tsv", "r") as tsv_file:
+with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv", "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from frame 1
     frame = 0
@@ -140,8 +139,7 @@ bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
 #Set origin of the plane to its median center
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
-
+bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 #Create vertex groups, one for each vertex
 vg = obj.vertex_groups.new(name="group0")
@@ -159,67 +157,16 @@ vg.add([3], 1, "ADD")
 vg = obj.vertex_groups.new(name="group4")
 vg.add([4], 1, "ADD")
 
+'''
 for x in bpy.context.scene.objects:
         if x.name.startswith("Torus"):
             ring = x
 
-for y in bpy.context.scene.objects:
-        if y.name.startswith("MyObject_copy"):
-            copy = y
-
-
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
-bpy.context.view_layer.objects.active = obj
-obj.select_set(state=True)
-'''
-bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-#bpy.ops.transform.rotate(value=0, orient_axis='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, release_confirm=True)
-bpy.ops.transform.rotate(value=1.5708, orient_axis='Z', orient_type='VIEW', orient_matrix=((0.345287, -0.938497, -6.07222e-07), (0.159741, 0.0587715, -0.985408), (-0.924803, -0.340248, -0.170209)), orient_matrix_type='VIEW', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, release_confirm=True)
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
-obj.location = copy.location
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+obj.location = ring.location
 
 '''
-### set the relation to foot
-ring.parent = obj
-ring.parent_type = 'VERTEX_3'
-n = len(obj.data.vertices)
-ring.parent_vertices = range(1, 4)
-
-'''
-location_array = [[order[0].location[0], order[0].location[1], order[0].location[2]], 
-[order[1].location[0], order[1].location[1], order[1].location[2]], 
-[order[2].location[0], order[2].location[1], order[2].location[2]],
-[order[3].location[0], order[3].location[1], order[3].location[2]],
-[order[4].location[0], order[4].location[1], order[4].location[2]]]
-data = np.array(location_array)
-new_location = np.average(data, axis=0)
-new_location_vector = Vector((new_location[0], new_location[1], new_location[2]))
-
-# Convert local coorinates to world coordinates before assignment
-obj.data.vertices[0].co.xyz = order[0].matrix_world.to_translation()
-obj.data.vertices[1].co.xyz = order[1].matrix_world.to_translation()
-obj.data.vertices[2].co.xyz = order[2].matrix_world.to_translation()
-obj.data.vertices[3].co.xyz = order[3].matrix_world.to_translation()
-obj.data.vertices[4].co.xyz = order[4].matrix_world.to_translation()
-bpy.context.view_layer.objects.active = obj
-obj.select_set(state=True)
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
-
-
-obj.location = new_location_vector
-bpy.context.view_layer.objects.active = obj
-obj.select_set(state=True)
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
-
-'''
-bpy.context.view_layer.objects.active = ring
-ring.select_set(state=True)
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
 
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-
 
 obj.select_set(True)
 bpy.context.view_layer.objects.active = obj
@@ -243,6 +190,32 @@ bpy.ops.object.modifier_add(type='HOOK')
 bpy.context.object.modifiers["Hook.004"].object = bpy.data.objects["Steve_CyrWheel05"]
 bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
 
+for obj in bpy.context.scene.objects:
+    if obj.name.startswith("Torus"):
+        ring = obj
+        
+'''
+#find center of 5 wheel vertex points
+l = [order[0].location, order[1].location, order[2].location, order[3].location, order[4].location]
+center = [(x*(1/8))+(y*(1/8))+(a*(1/4))+(b*(1/4))+(c*(1/8)) for x,y,a,b,c in zip(*l)]
+print("center")
+print(center)
+ring.location = Vector((float(center[0]), float(center[1]), float(center[2])))
+'''
+#find rotation in world space of 5 wheel vertex points
+#set wheel to that
+
+#hard coded wheel starting point for now
+ring.location = Vector((float(-0.120305), float(0.221471), float(-0.022553)))
+ring.rotation_euler[0] = -1.658
+ring.rotation_euler[1] = 0.26799
+ring.rotation_euler[2] = 2.00713
+### set the relation to foot
+ring.parent = obj
+ring.parent_type = 'VERTEX_3'
+n = len(obj.data.vertices)
+ring.parent_vertices = range(1, 4)
+
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
@@ -252,6 +225,8 @@ num_frames = len(file) - 11
 
 bpy.context.scene.frame_start = 1
 bpy.context.scene.frame_end = num_frames 
+
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
 #create a new handler to change empty positions every frame
 def my_handler(scene): 
@@ -274,9 +249,8 @@ def my_handler(scene):
     print("plane")
     for obj in bpy.context.scene.objects:
         if obj.name.startswith("Torus"):
-            mesh = obj
-    print(mesh.matrix_world.to_translation())
-    print(mesh.matrix_world.to_euler())
+            print(obj.matrix_world.to_translation())
+            print(obj.matrix_world.to_euler())
     for col in markers_list:
         if (col[0] and col[1] and col[2]):
             coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
