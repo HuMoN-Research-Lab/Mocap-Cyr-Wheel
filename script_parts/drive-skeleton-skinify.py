@@ -3,6 +3,15 @@ from mathutils import Matrix, Vector, Euler
 from math import *
 import time
 
+
+#To do 
+# - connect edges between connected vertices
+# - apply skinify to it
+# - create virtual markers at estimated locations
+# - create rigged skeleton for those virtual markers
+# - animate virtual markers by recalculating their positions at each frame
+
+
 #script to read tsv files in blender
 
 # Create 2D array "arr" to hold all 3D coordinate info of markers
@@ -24,7 +33,7 @@ def create_data_arr(frame):
  
 #-----------------------------------------------------------------------------------
 #open file (adjust file location)
-with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Handstands0009.tsv", "r") as tsv_file:
+with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/SteveAIMModel0002.tsv", "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from frame 1
     frame = 0
@@ -80,16 +89,78 @@ col = bpy.data.collections.get("Collection")
 col.objects.link(obj)
 bpy.context.view_layer.objects.active = obj
 
- # 5 verts made with XYZ coords
+arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
+    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
+    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
+    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
+    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
+    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
+    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
+    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
+    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
+    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
+    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
+    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
+    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
+    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
+    '46Steve_CyrWheel05']
+
+ # verts made with XYZ coords
 verts = []
 faces = []
 iter = 0;
 for x in order_of_markers:
     verts.append(x.location)
-edges = []
+
+#edges mesh connect
+#connect: [(1Steve_HeadTop,2Steve_HeadR),(2Steve_HeadR,3Steve_HeadFront),(3Steve_HeadFront,0Steve_HeadL), 
+# (0Steve_HeadL,1Steve_HeadTop),(1Steve_HeadTop,3Steve_HeadFront),
+
+# (19Steve_SpineTop,18Steve_Chest),(18Steve_Chest,21Steve_BackR),(18Steve_Chest,20Steve_BackL), (20Steve_BackL,21Steve_BackR),
+# (21Steve_BackR,19Steve_SpineTop),(20Steve_BackL,19Steve_SpineTop), 
+
+# (11Steve_RShoulderTop,12Steve_RShoulderBack),(11Steve_RShoulderTop,14Steve_RElbowOut),(12Steve_RShoulderBack,13Steve_RArm), 
+# (14Steve_RElbowOut,13Steve_RArm),(14Steve_RElbowOut,15Steve_RWristOut),(15Steve_RWristOut,16Steve_RWristIn), 
+# (15Steve_RWristOut,17Steve_RHandOut)
+
+
+#(4Steve_LShoulderTop,5Steve_LShoulderBack), (4Steve_LShoulderTop,7Steve_LElbowOut), (5Steve_LShoulderBack,6Steve_LArm),
+#(7Steve_LElbowOut,6Steve_LArm),(7Steve_LElbowOut,8Steve_LWristOut), (8Steve_LWristOut,9Steve_LWristIn),
+#(8Steve_LWristOut,10Steve_LHandOut),
+
+#(22Steve_WaistLFront,25Steve_WaistRFront),(22Steve_WaistLFront,23Steve_WaistLBack),
+# (25Steve_WaistRFront,24Steve_WaistRBack), (23Steve_WaistLBack,24Steve_WaistRBack),
+
+#(25Steve_WaistRFront,34Steve_RThigh),(24Steve_WaistRBack,35Steve_RKneeOut),(34Steve_RThigh,35Steve_RKneeOut),
+# (35Steve_RKneeOut,36Steve_RShin),(35Steve_RKneeOut,37Steve_RAnkleOut),(37Steve_RAnkleOut,38Steve_RHeelBack),
+# (38Steve_RHeelBack,39Steve_RForefootOut),(38Steve_RHeelBack,41Steve_RForefootIn),(41Steve_RForefootIn,40Steve_RToeTip), 
+# (36Steve_RShin,37Steve_RAnkleOut), (39Steve_RForefootOut,40Steve_RToeTip), 
+
+# (22Steve_WaistLFront,26Steve_LThigh),(23Steve_WaistLBack,27Steve_LKneeOut),(26Steve_LThigh,27Steve_LKneeOut),
+# (27Steve_LKneeOut,28Steve_LShin),(27Steve_LKneeOut,29Steve_LAnkleOut),(29Steve_LAnkleOut,30Steve_LHeelBack),
+#  (30Steve_LHeelBack,31Steve_LForefootOut), (30Steve_LHeelBack,33Steve_LForefootIn),(33Steve_LForefootIn,32Steve_LToeTip),
+# (28Steve_LShin,29Steve_LAnkleOut), (31Steve_LForefootOut,32Steve_LToeTip)]
+
+
+edges =  [(1,2),(2,3),(3,0),(0,1),(1,3), #head
+#chest and back
+(19,18),(18,21),(18,20),(20,21),(21,19),(20,19),
+#Right shoulder and arm
+(11,12),(11,14),(12,13),(14,13),(14,15),(15,16), (15,17),
+#Left shoulder and arm
+(4,5),(4,7),(5,6),(7,6),(7,8),(8,9), (8,10),
+#Waist
+(22,25),(22,23),(25,24),(23,24),
+#Right Leg and foot
+(25,34),(24,35),(34,35),(35,36),(35,37),(37,38), (38,39),
+(38,41),(41,40),(36,37), (39,40),
+#left leg and foot
+(22,26),(23,27),(26,27),(27,28),(27,29),(29,30), (30,31),
+(30,33),(33,32),(28,29), (31,32)]
+
 
 #Create the mesh with the vertices and faces
-mesh.from_pydata(verts, [], faces)
+mesh.from_pydata(verts, edges, faces)
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
@@ -98,7 +169,6 @@ bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 '''
 #-----------------------------------------------------------------------------------
-#Create armature of wheel if it is the 1st frame
 
 #adds child bone given corresponding parent and empty
 #bone tail will appear at the location of empty
@@ -160,24 +230,6 @@ def get_armature():
             armature = ob
             break
     return armature
-    
-
-
-arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
-    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
-    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
-    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
-    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
-    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
-    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
-    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
-    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
-    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
-    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
-    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
-    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
-    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
-    '46Steve_CyrWheel05']
 
 
  
@@ -207,6 +259,22 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
 #bone21: head = 16, tail = 18
 #bone22: head = 0, tail = 15
 #bone23: head = 15, tail = 17
+
+arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
+    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
+    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
+    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
+    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
+    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
+    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
+    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
+    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
+    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
+    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
+    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
+    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
+    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
+    '46Steve_CyrWheel05']
 
 list_of_bones_order = [('bone0', order_of_markers[1], order_of_markers[3]),
         ('bone1', order_of_markers[3], order_of_markers[0]),
