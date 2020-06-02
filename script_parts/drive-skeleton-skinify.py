@@ -5,7 +5,7 @@ import time
 
 
 #To do 
-# - connect edges between connected vertices
+# - connect edges between connected vertices --done
 # - apply skinify to it
 # - create virtual markers at estimated locations
 # - create rigged skeleton for those virtual markers
@@ -158,7 +158,6 @@ edges =  [(1,2),(2,3),(3,0),(0,1),(1,3), #head
 (22,26),(23,27),(26,27),(27,28),(27,29),(29,30), (30,31),
 (30,33),(33,32),(28,29), (31,32)]
 
-
 #Create the mesh with the vertices and faces
 mesh.from_pydata(verts, edges, faces)
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
@@ -166,6 +165,22 @@ bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
 #Set origin of the plane to its median center
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+
+virtual_markers = []
+#Create virtual markers 
+create_marker(marker_name, coord):
+    bpy.ops.object.add(type='EMPTY', location=coord)
+    mt = bpy.context.active_object  
+    mt.name = name
+    bpy.context.scene.collection.objects.link( mt )
+    mt.location = coord
+    mt.empty_display_size = 0.2
+    virtual_markers.append(mt)
+    
+#1: Halfway between 15Steve_RWristOut and 16Steve_RWristIn/ 8Steve_LWristOut and 9Steve_LWristIn
+coord = (order_of_markers[15].location + order_of_markers[16].location) / 2.0;
+create_marker("v_R_Wrist", coord)
 
 '''
 #-----------------------------------------------------------------------------------
