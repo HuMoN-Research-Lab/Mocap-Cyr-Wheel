@@ -326,21 +326,54 @@ w15 = [0.75, 0.25]
 update_virtual_data("weight", l15, w15, "v_RLeg1") 
 
 #LLeg1 between 23Steve_WaistLBack and 26Steve_LThigh
-l16 = [order_of_markers[24], order_of_markers[34]]
+l16 = [order_of_markers[23], order_of_markers[26]]
 w16 = [0.75, 0.25]
 update_virtual_data("weight", l16, w16, "v_LLeg1") 
 
 #Spine6 between Spine5 and RLeg1
 l17 = [virtual_markers[14], virtual_markers[14], virtual_markers[15]]
-w17 = []
-update_virtual_data("xyz", l17, w17, "v_Spine6")
+update_virtual_data("xyz", l17, [], "v_Spine6")
 
 #RLeg2 between 36Steve_RShin and 35Steve_RKneeOut
 l18 = [order_of_markers[35], order_of_markers[36], order_of_markers[35]]
-w18 = []
-update_virtual_data("xyz", l18, w18, "v_RLeg2")
+update_virtual_data("xyz", l18, [], "v_RLeg2")
 
-#27Steve_LKneeOut
+#LLeg2 between 28Steve_LShin and 27Steve_LKneeOut
+l19 = [order_of_markers[27], order_of_markers[28], order_of_markers[27]]
+update_virtual_data("xyz", l19, [], "v_LLeg2") 
+
+#Feet
+#LAnkle between 29Steve_LAnkleOut, 33Steve_LForefootIn, and 30Steve_LHeelBack
+l20 = [order_of_markers[29], order_of_markers[33], order_of_markers[30]]
+w20 = [0.35, 0.375, 0.275]
+update_virtual_data("weight", l20, w20, "v_LAnkle") 
+
+#RAnkle between 37Steve_RAnkleOut, 41Steve_RForefootIn, and 38Steve_RHeelBack
+l21 = [order_of_markers[37], order_of_markers[41], order_of_markers[38]]
+w21 = [0.35, 0.375, 0.275]
+update_virtual_data("weight", l21, w21, "v_RAnkle") 
+
+#RFoot between 41Steve_RForefootIn, 39Steve_RForefootOut
+l22 = [order_of_markers[41], order_of_markers[39]]
+w22 = [0.5, 0.5]
+update_virtual_data("weight", l22, w22, "v_RFoot") 
+
+#LFoot between 33Steve_LForefootIn, 31Steve_LForefootOut
+l23 = [order_of_markers[33], order_of_markers[31]]
+w23 = [0.5, 0.5]
+update_virtual_data("weight", l23, w23, "v_LFoot") 
+
+#LToe between 32Steve_LToeTip, 31Steve_LForefootOut
+l24 = [order_of_markers[32], order_of_markers[31]]
+w24 = [0.75, 0.25]
+update_virtual_data("weight", l24, w24, "v_LToe") 
+
+#RToe between 40Steve_RToeTip, 39Steve_RForefootOut
+l25 = [order_of_markers[40], order_of_markers[39]]
+w25 = [0.75, 0.25]
+update_virtual_data("weight", l25, w25, "v_RToe") 
+
+
 
 arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
     '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
@@ -483,8 +516,15 @@ list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_W
 ('bone13', virtual_markers[14], virtual_markers[13]), #v_RLeg1 to v_RLeg2
 ('bone14', virtual_markers[13], virtual_markers[17]), #v_Spine4 to v_Spine6
 ('bone15', virtual_markers[15], virtual_markers[17]), #v_Spine6 to v_RLeg1
-('bone16', virtual_markers[16], virtual_markers[17])] #v_Spine6 to v_LLeg1
-        
+('bone16', virtual_markers[16], virtual_markers[17]), #v_Spine6 to v_LLeg1
+('bone17', virtual_markers[15], virtual_markers[18]), #v_RLeg1 to v_RLeg2
+('bone18', virtual_markers[16], virtual_markers[19]), #v_LLeg1 to v_LLeg2]  
+('bone19', virtual_markers[19], virtual_markers[20]), #v_LLeg2 to v_LAnkle
+('bone20', virtual_markers[18], virtual_markers[21]), #v_RLeg2 to v_RAnkle
+('bone21', virtual_markers[21], virtual_markers[22]), #v_RAnkle to v_RFoot
+('bone22', virtual_markers[20], virtual_markers[23]), #v_LAnkle to v_LFoot
+('bone23', virtual_markers[23], virtual_markers[24]), #v_LFoot to v_LToe
+('bone24', virtual_markers[22], virtual_markers[25])] #v_RFoot to v_RToe
         
 #helper to create armature from list of tuples
 def tuple_to_armature(bones):
