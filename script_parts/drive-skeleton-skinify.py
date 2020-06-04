@@ -167,17 +167,9 @@ obj.select_set(state=True)
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 
-#1: Halfway between 15Steve_RWristOut and 16Steve_RWristIn/ 8Steve_LWristOut and 9Steve_LWristIn
-l0 = [order_of_markers[15], order_of_markers[16]]
-w0 = [0.5, 0.5]
-l1 = [order_of_markers[8], order_of_markers[9]]
-w1 = [0.5, 0.5]
+#--------------------------------------------------------------
+#Virtual Markers!
 
-
-virtual_markers = []
-surrounding_markers = [l0, l1]
-weights = [w0, w1]
-v_names = ["v_R_Wrist", "v_L_Wrist"]
 #Create virtual markers takes in a string name and a list of marker s that influence it and weights
 def create_marker(name, markers, weighted):
     center = Vector((0, 0, 0))
@@ -193,19 +185,90 @@ def create_marker(name, markers, weighted):
     mt.empty_display_size = 1.0
     virtual_markers.append(mt)
     
-for x in range(len(v_names)):
-    create_marker(v_names[x], surrounding_markers[x], weights[x])
+#Create virtual markers takes in a string name 
+#surrounding_markers [a, b, c] take a.x, b.y, and c.z locations
+#z is up, x is forward, y is side
+def create_marker_xyz(name, list):
+    coord = Vector((list[0].location[0], list[1].location[1], list[2].location[2]))
+    bpy.ops.object.add(type='EMPTY', location=coord)
+    mt = bpy.context.active_object  
+    mt.name = name
+    bpy.context.scene.collection.objects.link( mt )
+    mt.location = coord
+    mt.empty_display_size = 1.0
+    virtual_markers.append(mt)
+
+v_relationship = []
+virtual_markers = []
+surrounding_markers = []
+weights = []
+v_names = []
+
+#updates data and creates virtual marker
+def update_virtual_data(relationship, surrounding, vweights, vname):
+    v_relationship.append(relationship)
+    surrounding_markers.append(surrounding)
+    weights.append(vweights)
+    v_names.append(vname)
+    if(relationship is "weight"):
+        create_marker(vname, surrounding, vweights)
+    else :
+        create_marker_xyz(vname, surrounding)
+    
+#-----------------------------------------------------------------
+#Define relationships and create virtual markers
+
+
+#Wrists: Halfway between 15Steve_RWristOut and 16Steve_RWristIn/ 8Steve_LWristOut and 9Steve_LWristIn
+l0 = [order_of_markers[15], order_of_markers[16]]
+w0 = [0.5, 0.5]
+update_virtual_data("weight", l0, w0, "v_R_Wrist")
+
+
+l1 = [order_of_markers[8], order_of_markers[9]]
+w1 = [0.5, 0.5]
+update_virtual_data("weight", l1, w1, "v_L_Wrist")
+
+#Hands: Halfway between 9Steve_LWristIn and 10Steve_LHandOut/16Steve_RWristIn and 17Steve_RHandOut
+l2 = [order_of_markers[9], order_of_markers[10]]
+w2 = [0.5, 0.5]
+update_virtual_data("weight", l2, w2, "v_L_Hand")
+
+l3 = [order_of_markers[16], order_of_markers[17]]
+w3 = [0.5, 0.5]
+update_virtual_data("weight", l3, w3, "v_R_Hand")
+
+#elbows : X is v_L_Wrist (virtual_markers[1]), 
+#Y is 7Steve_LElbowOut (order_of_markers[7]), 
+#Z is 7Steve_LElbowOut (order_of_markers[7]) 
+l4 = [virtual_markers[1], order_of_markers[7], order_of_markers[7]]
+w4 = []
+update_virtual_data("xyz", l4, w4, "v_L_Elbow")
+
+#X is v_R_Wrist (virtual_markers[0], 
+#Y is 14Steve_RElbowOut (order_of_markers[14]),
+#and Z is 14Steve_RElbowOut (order_of_markers[14])
+l5 = [virtual_markers[0], order_of_markers[14], order_of_markers[14]]
+w5 = []
+update_virtual_data("xyz", l5, w5, "v_R_Elbow") 
+
+
 
 #Update the location of virtual markers on each frame
 def update_virtual_marker(index):
-    center = Vector((0, 0, 0))
-    weight_iter = 0
-    for x in surrounding_markers[index]:
-        center += x.location*weights[index][weight_iter]
-    coord = Vector((float(center[0]), float(center[1]), float(center[2])))
-    virtual_markers[index].location = coord
-    
-#build skeleton based on virtual markers 
+    if(v_relationship[index] is "weight"):
+        center = Vector((0, 0, 0))
+        weight_iter = 0
+        for x in surrounding_markers[index]:
+            center += x.location*weights[index][weight_iter]
+        coord = Vector((float(center[0]), float(center[1]), float(center[2])))
+        virtual_markers[index].location = coord
+    else:
+        x = surrounding_markers[index][0].location[0]
+        y = surrounding_markers[index][1].location[1]
+        z = surrounding_markers[index][2].location[2]
+        coord = Vector((x, y, z))
+        virtual_markers[index].location = coord
     
 
 #-----------------------------------------------------------------------------------
@@ -226,13 +289,7 @@ def add_child_bone(bone_name, empty1, empty2):
     new_bone.tail = empty2.location
     return new_bone
 
-#Create armature object
-armature = bpy.data.armatures.new('Armature')
-armature_object = bpy.data.objects.new('Armature', armature)
-#Link armature object to our scene
-bpy.context.collection.objects.link(armature_object)
-#Make armature variable
-armature_data = bpy.data.objects[armature_object.name]
+
 #Set armature active
 bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
@@ -243,7 +300,6 @@ bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 armature_data.show_in_front = True
 #True to show axis orientation of bones and false to hide it
 armature_data.data.show_axes = False
-
 #get armature object
 def get_armature():
     for ob in bpy.data.objects:
@@ -251,7 +307,6 @@ def get_armature():
             armature = ob
             break
     return armature
-
 armature = get_armature()
 
 
@@ -261,15 +316,6 @@ armature = get_armature()
 #marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
 #marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
 #marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
-    
-
-#get armature object
-def get_armature():
-    for ob in bpy.data.objects:
-        if ob.type == 'ARMATURE':
-            armature = ob
-            break
-    return armature
 
 
  
@@ -316,56 +362,11 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
     '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
     '46Steve_CyrWheel05']
 
-list_of_bones_order = [('bone0', order_of_markers[1], order_of_markers[3]),
-        ('bone1', order_of_markers[3], order_of_markers[0]),
-        ('bone2', order_of_markers[3], order_of_markers[2]),
-        ('bone3', order_of_markers[19], order_of_markers[18]),
-        ('bone4', order_of_markers[18], order_of_markers[4]),
-        ('bone5', order_of_markers[4], order_of_markers[7]),
-        ('bone6', order_of_markers[7], order_of_markers[8]),
-        ('bone7', order_of_markers[18], order_of_markers[11]),
-        ('bone8', order_of_markers[11], order_of_markers[14]),
-        ('bone9', order_of_markers[14], order_of_markers[15]),
-        ('bone10', order_of_markers[22], order_of_markers[26]),
-        ('bone11', order_of_markers[26], order_of_markers[27]),
-        ('bone12', order_of_markers[27], order_of_markers[28]),
-        ('bone13', order_of_markers[28], order_of_markers[29]),
-        ('bone14', order_of_markers[29], order_of_markers[31]),
-        ('bone15', order_of_markers[29], order_of_markers[32]),
-        ('bone16', order_of_markers[29], order_of_markers[33]),
-        ('bone17', order_of_markers[25], order_of_markers[34]),
-        ('bone18', order_of_markers[34], order_of_markers[35]),
-        ('bone19', order_of_markers[35], order_of_markers[36]),
-        ('bone20', order_of_markers[36], order_of_markers[37]),
-        ('bone21', order_of_markers[37], order_of_markers[41]),
-        ('bone22', order_of_markers[37], order_of_markers[39]), 
-        ('bone23', order_of_markers[12], order_of_markers[13]),
-        ('bone24', order_of_markers[13], order_of_markers[14]),
-        ('bone25', order_of_markers[15], order_of_markers[17]),
-        #('bone26', order_of_markers[37], order_of_markers[40]),
-        ('bone27', order_of_markers[19], order_of_markers[5]),
-        ('bone28', order_of_markers[5], order_of_markers[6]),
-        ('bone29', order_of_markers[6], order_of_markers[7]),
-        ('bone30', order_of_markers[8], order_of_markers[9]),
-        ('bone31', order_of_markers[19], order_of_markers[18]),
-        ('bone32', order_of_markers[18], order_of_markers[20]),
-        ('bone33', order_of_markers[18], order_of_markers[21]),
-        ('bone34', order_of_markers[20], order_of_markers[23]),
-        ('bone35', order_of_markers[21], order_of_markers[24]),
-        ('bone36', order_of_markers[23], order_of_markers[22]),
-        ('bone37', order_of_markers[24], order_of_markers[25]),
-        ('bone38', order_of_markers[22], order_of_markers[25]),
-        ('bone39', order_of_markers[3], order_of_markers[18]),
-        ('bone40', order_of_markers[29], order_of_markers[30]),
-        ('bone41', order_of_markers[37], order_of_markers[38]),
-        ('bone42', order_of_markers[18], order_of_markers[22]),
-        ('bone43', order_of_markers[18], order_of_markers[25]),
-        ('bone44', order_of_markers[23], order_of_markers[27]),
-        ('bone45', order_of_markers[24], order_of_markers[35]),
-        ('bone46', order_of_markers[12], order_of_markers[19]),
-        ('bone47', order_of_markers[27], order_of_markers[30]),
-        ('bone48', order_of_markers[35], order_of_markers[38]),
-        ('bone49', order_of_markers[8], order_of_markers[10])]
+
+list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
+('bone1', virtual_markers[1], virtual_markers[2]), #v_L_Wrist to v_L_Hand
+('bone2', virtual_markers[4], virtual_markers[1]), #v_L_Elbow to v_L_Wrist
+('bone3', virtual_markers[5], virtual_markers[0])] #v_R_Elbow to v_R_Wrist
         
         
 #helper to create armature from list of tuples
@@ -374,14 +375,13 @@ def tuple_to_armature(bones):
         add_child_bone(bone_name, bone_head, bone_tail)
         
 #create all bones for skeleton body and hands
-#tuple_to_armature(list_of_bones_order)
-
+tuple_to_armature(list_of_bones_order)
 
 #parent heads and tails to empties
 #use bone constraints 
 def parent_to_empties(bone_name, head, tail):
     #enter pose mode
-    bpy.ops.object.posemode_toggle()
+    bpy.ops.object.mode_set(mode='POSE')
     marker = armature.data.bones[bone_name]
     #Set marker selected
     marker.select = True
@@ -403,7 +403,7 @@ def tuple_to_parented(bones):
     for bone_name, bone_head, bone_tail in bones:
         parent_to_empties(bone_name, bone_head, bone_tail)
 
-#tuple_to_parented(list_of_bones_order)
+tuple_to_parented(list_of_bones_order)
 
 #-----------------------------------------------------------------------------------
 # Animate!
