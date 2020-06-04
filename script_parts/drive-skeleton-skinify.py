@@ -167,6 +167,25 @@ obj.select_set(state=True)
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 
+def add_vertex_group_hooks():
+    for x in range(len(verts)):
+        #Create vertex groups, one for each vertex
+        vg = obj.vertex_groups.new(name="group" + str(x))
+        vg.add([x], 1, "ADD")
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_add(type='HOOK')
+        hook_name = "Hook" + str(x)
+        bpy.context.object.modifiers["Hook"].name = hook_name
+        bpy.context.object.modifiers[hook_name].object = order_of_markers[x]
+        bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
+        
+add_vertex_group_hooks()
+        
+    
+
+
 #--------------------------------------------------------------
 #Virtual Markers!
 
@@ -263,6 +282,33 @@ update_virtual_data("weight", l6, w6, "v_R_Shoulder")
 l7 = [order_of_markers[4], order_of_markers[5]]
 w7 = [0.9, 0.1]
 update_virtual_data("weight", l7, w7, "v_L_Shoulder") 
+
+arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
+    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
+    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
+    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
+    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
+    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
+    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
+    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
+    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
+    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
+    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
+    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
+    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
+    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
+    '46Steve_CyrWheel05']
+    
+#Chest between 19Steve_SpineTop, 18Steve_Chest, 21Steve_BackR, 20Steve_BackL
+l8 = [order_of_markers[19], order_of_markers[18], order_of_markers[21], order_of_markers[20]]
+w8 = [0.3, 0.3, 0.2, 0.2]
+update_virtual_data("weight", l8, w8, "v_Chest") 
+
+#Head between 1Steve_HeadTop, 0Steve_HeadL, 2Steve_HeadR, 3Steve_HeadFront
+l9 = [order_of_markers[1], order_of_markers[0], order_of_markers[2], order_of_markers[3]]
+w9 = [0.33333, 0.33333, 0.33333, 0]
+update_virtual_data("weight", l9, w9, "v_Head") 
+
 
 
 #Update the location of virtual markers on each frame
@@ -380,7 +426,9 @@ list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_W
 ('bone2', virtual_markers[4], virtual_markers[1]), #v_L_Elbow to v_L_Wrist
 ('bone3', virtual_markers[5], virtual_markers[0]), #v_R_Elbow to v_R_Wrist
 ('bone4', virtual_markers[6], virtual_markers[5]), #v_R_Shoulder to v_R_Elbow 
-('bone5', virtual_markers[7], virtual_markers[4])] #v_L_Shoulder to v_L_Elbow 
+('bone5', virtual_markers[7], virtual_markers[4]), #v_L_Shoulder to v_L_Elbow 
+('bone6', virtual_markers[8], virtual_markers[7]),  #v_Chest to v_L_Shoulder
+('bone7', virtual_markers[8], virtual_markers[6])] #v_Chest to v_R_Shoulder
         
         
 #helper to create armature from list of tuples
@@ -418,6 +466,8 @@ def tuple_to_parented(bones):
         parent_to_empties(bone_name, bone_head, bone_tail)
 
 tuple_to_parented(list_of_bones_order)
+bpy.context.object.data.display_type = 'STICK'
+
 
 #-----------------------------------------------------------------------------------
 # Animate!
