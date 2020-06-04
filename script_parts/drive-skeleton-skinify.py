@@ -167,22 +167,47 @@ obj.select_set(state=True)
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 
+#1: Halfway between 15Steve_RWristOut and 16Steve_RWristIn/ 8Steve_LWristOut and 9Steve_LWristIn
+l0 = [order_of_markers[15], order_of_markers[16]]
+w0 = [0.5, 0.5]
+l1 = [order_of_markers[8], order_of_markers[9]]
+w1 = [0.5, 0.5]
+
+
 virtual_markers = []
-#Create virtual markers 
-create_marker(marker_name, coord):
+surrounding_markers = [l0, l1]
+weights = [w0, w1]
+v_names = ["v_R_Wrist", "v_L_Wrist"]
+#Create virtual markers takes in a string name and a list of marker s that influence it and weights
+def create_marker(name, markers, weighted):
+    center = Vector((0, 0, 0))
+    weight_iter = 0
+    for x in markers:
+        center += x.location*weighted[weight_iter]
+    coord = Vector((float(center[0]), float(center[1]), float(center[2])))
     bpy.ops.object.add(type='EMPTY', location=coord)
     mt = bpy.context.active_object  
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.2
+    mt.empty_display_size = 1.0
     virtual_markers.append(mt)
     
-#1: Halfway between 15Steve_RWristOut and 16Steve_RWristIn/ 8Steve_LWristOut and 9Steve_LWristIn
-coord = (order_of_markers[15].location + order_of_markers[16].location) / 2.0;
-create_marker("v_R_Wrist", coord)
+for x in range(len(v_names)):
+    create_marker(v_names[x], surrounding_markers[x], weights[x])
 
-'''
+#Update the location of virtual markers on each frame
+def update_virtual_marker(index):
+    center = Vector((0, 0, 0))
+    weight_iter = 0
+    for x in surrounding_markers[index]:
+        center += x.location*weights[index][weight_iter]
+    coord = Vector((float(center[0]), float(center[1]), float(center[2])))
+    virtual_markers[index].location = coord
+    
+#build skeleton based on virtual markers 
+    
+
 #-----------------------------------------------------------------------------------
 
 #adds child bone given corresponding parent and empty
@@ -349,7 +374,7 @@ def tuple_to_armature(bones):
         add_child_bone(bone_name, bone_head, bone_tail)
         
 #create all bones for skeleton body and hands
-tuple_to_armature(list_of_bones_order)
+#tuple_to_armature(list_of_bones_order)
 
 
 #parent heads and tails to empties
@@ -378,8 +403,8 @@ def tuple_to_parented(bones):
     for bone_name, bone_head, bone_tail in bones:
         parent_to_empties(bone_name, bone_head, bone_tail)
 
-tuple_to_parented(list_of_bones_order)
-'''
+#tuple_to_parented(list_of_bones_order)
+
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
@@ -401,6 +426,8 @@ def my_handler(scene):
     frame = scene.frame_current
     #get the list of marker points from the current frame
     markers_list = create_data_arr(frame - 1)
+    #current virtual marker 
+    current_virtual_marker = 0
     #iterate through list of markers in this frame
     for col in markers_list:
         if (col[0] and col[1] and col[2]):
@@ -413,6 +440,9 @@ def my_handler(scene):
             #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
             #increment counter of the number marker we are currently changing
         current_marker += 1 
+    for index in range(len(virtual_markers)):
+        update_virtual_marker(index)
+        
         '''
         if(current_marker == len(markers_list)):
             frames_seen += 1
@@ -564,8 +594,7 @@ for selected_object in bpy.data.objects:
 #Set armature active
 bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
-armature_data.select_set(state=True)
- '''               
+armature_data.select_set(state=True) '''
                 
 bpy.app.handlers.frame_change_post.clear()
 #function to register custom handler
