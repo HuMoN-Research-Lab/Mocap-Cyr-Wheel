@@ -66,7 +66,7 @@ for col in arr:
     name += 1
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.2
+    mt.empty_display_size = 0.01
     order_of_markers.append(mt)
     
 #Create armature object
@@ -185,7 +185,6 @@ add_vertex_group_hooks()
         
     
 
-
 #--------------------------------------------------------------
 #Virtual Markers!
 
@@ -202,7 +201,7 @@ def create_marker(name, markers, weighted):
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 1.0
+    mt.empty_display_size = 0.2
     virtual_markers.append(mt)
     
 #Create virtual markers takes in a string name 
@@ -282,6 +281,66 @@ update_virtual_data("weight", l6, w6, "v_R_Shoulder")
 l7 = [order_of_markers[4], order_of_markers[5]]
 w7 = [0.9, 0.1]
 update_virtual_data("weight", l7, w7, "v_L_Shoulder") 
+    
+#Chest between 19Steve_SpineTop, 18Steve_Chest, 21Steve_BackR, 20Steve_BackL
+l8 = [order_of_markers[19], order_of_markers[18], order_of_markers[21], order_of_markers[20]]
+w8 = [0.35, 0.35, 0.15, 0.15]
+update_virtual_data("weight", l8, w8, "v_Chest") 
+
+#Head between 1Steve_HeadTop, 0Steve_HeadL, 2Steve_HeadR, 3Steve_HeadFront
+l9 = [order_of_markers[1], order_of_markers[0], order_of_markers[2], order_of_markers[3]]
+w9 = [0.33333, 0.33333, 0.33333, 0]
+update_virtual_data("weight", l9, w9, "v_Head") 
+
+#Spine
+
+#Spine1 between 3Steve_HeadFront and 19Steve_SpineTop
+l10 = [order_of_markers[3], order_of_markers[19]]
+w10 = [0.66666, 0.33333]
+update_virtual_data("weight", l10, w10, "v_Spine1") 
+
+#Spine2 between 19Steve_SpineTop and 18Steve_Chest
+l11 = [order_of_markers[19], order_of_markers[18]]
+w11 = [0.66666, 0.33333]
+update_virtual_data("weight", l11, w11, "v_Spine2") 
+
+#Spine3 between 19Steve_SpineTop, 18Steve_Chest, 21Steve_BackR, 20Steve_BackL
+l12 = [order_of_markers[19], order_of_markers[18], order_of_markers[21], order_of_markers[20]]
+w12 = [0.25, 0.25, 0.25, 0.25]
+update_virtual_data("weight", l12, w12, "v_Spine3") 
+
+#Spine4 between 23Steve_WaistLBack, 22Steve_WaistLFront, 24Steve_WaistRBack, 25Steve_WaistRFront
+l13 = [order_of_markers[23], order_of_markers[22], order_of_markers[24], order_of_markers[25]]
+w13 = [0.333333, 0.16666666, 0.333333, 0.16666666]
+update_virtual_data("weight", l13, w13, "v_Spine4") 
+
+#Spine5 between 2 other spine virtual markers
+l14 = [virtual_markers[12], virtual_markers[13]]
+w14 = [0.5, 0.5]
+update_virtual_data("weight", l14, w14, "v_Spine5") 
+
+#Leg2
+#RLeg1 between 24Steve_WaistRBack and 34Steve_RThigh
+l15 = [order_of_markers[24], order_of_markers[34]]
+w15 = [0.75, 0.25]
+update_virtual_data("weight", l15, w15, "v_RLeg1") 
+
+#LLeg1 between 23Steve_WaistLBack and 26Steve_LThigh
+l16 = [order_of_markers[24], order_of_markers[34]]
+w16 = [0.75, 0.25]
+update_virtual_data("weight", l16, w16, "v_LLeg1") 
+
+#Spine6 between Spine5 and RLeg1
+l17 = [virtual_markers[14], virtual_markers[14], virtual_markers[15]]
+w17 = []
+update_virtual_data("xyz", l17, w17, "v_Spine6")
+
+#RLeg2 between 36Steve_RShin and 35Steve_RKneeOut
+l18 = [order_of_markers[35], order_of_markers[36], order_of_markers[35]]
+w18 = []
+update_virtual_data("xyz", l18, w18, "v_RLeg2")
+
+#27Steve_LKneeOut
 
 arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
     '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
@@ -298,18 +357,6 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
     '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
     '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
     '46Steve_CyrWheel05']
-    
-#Chest between 19Steve_SpineTop, 18Steve_Chest, 21Steve_BackR, 20Steve_BackL
-l8 = [order_of_markers[19], order_of_markers[18], order_of_markers[21], order_of_markers[20]]
-w8 = [0.3, 0.3, 0.2, 0.2]
-update_virtual_data("weight", l8, w8, "v_Chest") 
-
-#Head between 1Steve_HeadTop, 0Steve_HeadL, 2Steve_HeadR, 3Steve_HeadFront
-l9 = [order_of_markers[1], order_of_markers[0], order_of_markers[2], order_of_markers[3]]
-w9 = [0.33333, 0.33333, 0.33333, 0]
-update_virtual_data("weight", l9, w9, "v_Head") 
-
-
 
 #Update the location of virtual markers on each frame
 def update_virtual_marker(index):
@@ -420,7 +467,6 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
     '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
     '46Steve_CyrWheel05']
 
-
 list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
 ('bone1', virtual_markers[1], virtual_markers[2]), #v_L_Wrist to v_L_Hand
 ('bone2', virtual_markers[4], virtual_markers[1]), #v_L_Elbow to v_L_Wrist
@@ -428,7 +474,16 @@ list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_W
 ('bone4', virtual_markers[6], virtual_markers[5]), #v_R_Shoulder to v_R_Elbow 
 ('bone5', virtual_markers[7], virtual_markers[4]), #v_L_Shoulder to v_L_Elbow 
 ('bone6', virtual_markers[8], virtual_markers[7]),  #v_Chest to v_L_Shoulder
-('bone7', virtual_markers[8], virtual_markers[6])] #v_Chest to v_R_Shoulder
+('bone7', virtual_markers[8], virtual_markers[6]), #v_Chest to v_R_Shoulder
+('bone8', virtual_markers[9], virtual_markers[10]), #v_Head to v_Spine1
+('bone9', virtual_markers[10], virtual_markers[11]), #v_Spine1 to v_Spine2
+('bone10', virtual_markers[11], virtual_markers[12]),  #v_Spine2 to v_Spine3
+('bone11', virtual_markers[12], virtual_markers[14]),  #v_Spine3 to v_Spine5
+('bone12', virtual_markers[14], virtual_markers[13]),  #v_Spine5 to v_Spine4
+('bone13', virtual_markers[14], virtual_markers[13]), #v_RLeg1 to v_RLeg2
+('bone14', virtual_markers[13], virtual_markers[17]), #v_Spine4 to v_Spine6
+('bone15', virtual_markers[15], virtual_markers[17]), #v_Spine6 to v_RLeg1
+('bone16', virtual_markers[16], virtual_markers[17])] #v_Spine6 to v_LLeg1
         
         
 #helper to create armature from list of tuples
