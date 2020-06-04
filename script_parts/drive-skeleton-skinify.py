@@ -176,6 +176,7 @@ def create_marker(name, markers, weighted):
     weight_iter = 0
     for x in markers:
         center += x.location*weighted[weight_iter]
+        weight_iter += 1
     coord = Vector((float(center[0]), float(center[1]), float(center[2])))
     bpy.ops.object.add(type='EMPTY', location=coord)
     mt = bpy.context.active_object  
@@ -195,7 +196,7 @@ def create_marker_xyz(name, list):
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 1.0
+    mt.empty_display_size = 0.2
     virtual_markers.append(mt)
 
 v_relationship = []
@@ -252,6 +253,16 @@ l5 = [virtual_markers[0], order_of_markers[14], order_of_markers[14]]
 w5 = []
 update_virtual_data("xyz", l5, w5, "v_R_Elbow") 
 
+#Shoulders
+#between 11Steve_RShoulderTop and 12Steve_RShoulderBack
+l6 = [order_of_markers[11], order_of_markers[12]]
+w6 = [0.9, 0.1]
+update_virtual_data("weight", l6, w6, "v_R_Shoulder") 
+
+#between 4Steve_LShoulderTop and 5Steve_LShoulderBack
+l7 = [order_of_markers[4], order_of_markers[5]]
+w7 = [0.9, 0.1]
+update_virtual_data("weight", l7, w7, "v_L_Shoulder") 
 
 
 #Update the location of virtual markers on each frame
@@ -261,6 +272,7 @@ def update_virtual_marker(index):
         weight_iter = 0
         for x in surrounding_markers[index]:
             center += x.location*weights[index][weight_iter]
+            weight_iter += 1
         coord = Vector((float(center[0]), float(center[1]), float(center[2])))
         virtual_markers[index].location = coord
     else:
@@ -366,7 +378,9 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
 list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
 ('bone1', virtual_markers[1], virtual_markers[2]), #v_L_Wrist to v_L_Hand
 ('bone2', virtual_markers[4], virtual_markers[1]), #v_L_Elbow to v_L_Wrist
-('bone3', virtual_markers[5], virtual_markers[0])] #v_R_Elbow to v_R_Wrist
+('bone3', virtual_markers[5], virtual_markers[0]), #v_R_Elbow to v_R_Wrist
+('bone4', virtual_markers[6], virtual_markers[5]), #v_R_Shoulder to v_R_Elbow 
+('bone5', virtual_markers[7], virtual_markers[4])] #v_L_Shoulder to v_L_Elbow 
         
         
 #helper to create armature from list of tuples
