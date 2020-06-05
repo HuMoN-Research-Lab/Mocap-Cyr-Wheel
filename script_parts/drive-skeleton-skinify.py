@@ -5,11 +5,9 @@ import time
 
 
 #To do 
-# - connect edges between connected vertices --done
-# - apply skinify to it
-# - create virtual markers at estimated locations
-# - create rigged skeleton for those virtual markers
-# - animate virtual markers by recalculating their positions at each frame
+# - Fix knee and other markers by adding "offset" method
+# - apply skinify to make mesh and bones visible in render
+# - Fix up code in general and make output data 
 
 
 #script to read tsv files in blender
@@ -201,7 +199,7 @@ def create_marker(name, markers, weighted):
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.2
+    mt.empty_display_size = 0.01
     virtual_markers.append(mt)
     
 #Create virtual markers takes in a string name 
@@ -214,7 +212,7 @@ def create_marker_xyz(name, list):
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.2
+    mt.empty_display_size = 0.01
     virtual_markers.append(mt)
 
 v_relationship = []
@@ -260,26 +258,27 @@ update_virtual_data("weight", l3, w3, "v_R_Hand")
 #elbows : X is v_L_Wrist (virtual_markers[1]), 
 #Y is 7Steve_LElbowOut (order_of_markers[7]), 
 #Z is 7Steve_LElbowOut (order_of_markers[7]) 
-l4 = [virtual_markers[1], order_of_markers[7], order_of_markers[7]]
+l4 = [order_of_markers[7], order_of_markers[7], order_of_markers[7]]
 w4 = []
-update_virtual_data("xyz", l4, w4, "v_L_Elbow")
+l4marker = update_virtual_data("xyz", l4, w4, "v_L_Elbow")
+
 
 #X is v_R_Wrist (virtual_markers[0], 
 #Y is 14Steve_RElbowOut (order_of_markers[14]),
 #and Z is 14Steve_RElbowOut (order_of_markers[14])
-l5 = [virtual_markers[0], order_of_markers[14], order_of_markers[14]]
+l5 = [order_of_markers[14], order_of_markers[14], order_of_markers[14]]
 w5 = []
 update_virtual_data("xyz", l5, w5, "v_R_Elbow") 
 
 #Shoulders
 #between 11Steve_RShoulderTop and 12Steve_RShoulderBack
 l6 = [order_of_markers[11], order_of_markers[12]]
-w6 = [0.9, 0.1]
+w6 = [0.75, 0.25]
 update_virtual_data("weight", l6, w6, "v_R_Shoulder") 
 
 #between 4Steve_LShoulderTop and 5Steve_LShoulderBack
 l7 = [order_of_markers[4], order_of_markers[5]]
-w7 = [0.9, 0.1]
+w7 = [0.75, 0.25]
 update_virtual_data("weight", l7, w7, "v_L_Shoulder") 
     
 #Chest between 19Steve_SpineTop, 18Steve_Chest, 21Steve_BackR, 20Steve_BackL
@@ -330,9 +329,10 @@ l16 = [order_of_markers[23], order_of_markers[26]]
 w16 = [0.75, 0.25]
 update_virtual_data("weight", l16, w16, "v_LLeg1") 
 
-#Spine6 between Spine5 and RLeg1
-l17 = [virtual_markers[14], virtual_markers[14], virtual_markers[15]]
-update_virtual_data("xyz", l17, [], "v_Spine6")
+#Spine6 between LLeg1 and RLeg1
+l17 = [virtual_markers[16], virtual_markers[15]]
+w17 = [0.5, 0.5]
+update_virtual_data("weight", l17, w17, "v_Spine6")
 
 #RLeg2 between 36Steve_RShin and 35Steve_RKneeOut
 l18 = [order_of_markers[35], order_of_markers[36], order_of_markers[35]]
@@ -342,7 +342,7 @@ update_virtual_data("xyz", l18, [], "v_RLeg2")
 l19 = [order_of_markers[27], order_of_markers[28], order_of_markers[27]]
 update_virtual_data("xyz", l19, [], "v_LLeg2") 
 
-#Feet
+#Feet 
 #LAnkle between 29Steve_LAnkleOut, 33Steve_LForefootIn, and 30Steve_LHeelBack
 l20 = [order_of_markers[29], order_of_markers[33], order_of_markers[30]]
 w20 = [0.35, 0.375, 0.275]
@@ -374,23 +374,6 @@ w25 = [0.75, 0.25]
 update_virtual_data("weight", l25, w25, "v_RToe") 
 
 
-
-arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
-    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
-    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
-    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
-    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
-    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
-    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
-    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
-    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
-    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
-    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
-    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
-    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
-    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
-    '46Steve_CyrWheel05']
-
 #Update the location of virtual markers on each frame
 def update_virtual_marker(index):
     if(v_relationship[index] is "weight"):
@@ -407,7 +390,6 @@ def update_virtual_marker(index):
         z = surrounding_markers[index][2].location[2]
         coord = Vector((x, y, z))
         virtual_markers[index].location = coord
-    
 
 #-----------------------------------------------------------------------------------
 
@@ -448,58 +430,8 @@ def get_armature():
 armature = get_armature()
 
 
-#bone structure by empties
-#Root:    head = Steve_CyrWheel05, tail = Steve_CyrWheel01
-#marker2: head = Steve_CyrWheel01, tail = Steve_CyrWheel02
-#marker3: head = Steve_CyrWheel02, tail = Steve_CyrWheel03
-#marker4: head = Steve_CyrWheel03, tail = Steve_CyrWheel04
-#marker5: head = Steve_CyrWheel04, tail = Steve_CyrWheel05
 
-
- 
-#bone structure by empties
-# https://github.com/CMU-Perceptual-Computing-Lab/openpose/raw/master/doc/media/keypoints_pose_25.png
-#bone0: head = 1, tail = 3
-#bone1: head = 3, tail = 2
-#bone2: head = 3, tail = 2
-#bone3: head = 12, tail = 13
-#bone4: head = 13, tail = 14
-#bone5: head = 14, tail = 21
-#bone6: head = 14, tail = 19
-#bone7: head = 19, tail = 20
-#bone8: head = 8, tail = 9
-#bone9: head = 9, tail = 10
-#bone10: head = 10, tail = 11
-#bone11: head = 11, tail = 24
-#bone12: head = 11, tail = 22
-#bone13: head = 22, tail = 23
-#bone14: head = 1, tail = 5
-#bone15: head = 5, tail = 6
-#bone16: head = 6, tail = 7
-#bone17: head = 1, tail = 2
-#bone18: head = 2, tail = 3
-#bone19: head = 3, tail = 4
-#bone20: head = 0, tail = 16
-#bone21: head = 16, tail = 18
-#bone22: head = 0, tail = 15
-#bone23: head = 15, tail = 17
-
-arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
-    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
-    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
-    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
-    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
-    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
-    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
-    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
-    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
-    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
-    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
-    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
-    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
-    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
-    '46Steve_CyrWheel05']
-
+#Define how Skeleton bones connect to one another
 list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
 ('bone1', virtual_markers[1], virtual_markers[2]), #v_L_Wrist to v_L_Hand
 ('bone2', virtual_markers[4], virtual_markers[1]), #v_L_Elbow to v_L_Wrist
@@ -562,6 +494,7 @@ def tuple_to_parented(bones):
 
 tuple_to_parented(list_of_bones_order)
 bpy.context.object.data.display_type = 'STICK'
+bpy.context.object.show_in_front = False
 
 
 #-----------------------------------------------------------------------------------
