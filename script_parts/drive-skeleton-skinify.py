@@ -8,6 +8,7 @@ import time
 # - Fix knee and other markers by adding "offset" method
 # - apply skinify to make mesh and bones visible in render
 # - Fix up code in general and make output data 
+#- Update rerad-me with visuals of wheel and skeleton
 
 
 #script to read tsv files in blender
@@ -64,7 +65,7 @@ for col in arr:
     name += 1
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.01
+    mt.empty_display_size = 0.1
     order_of_markers.append(mt)
     
 #Create armature object
@@ -186,8 +187,22 @@ add_vertex_group_hooks()
 #--------------------------------------------------------------
 #Virtual Markers!
 
+#Three types of marker relationships:
+
+# - "weight": the weighted average of multiple markers. the virtual_markers[x] contains the 
+#list of markers that affect this virtual one. the weights[x] contains their corresponding weights in order.
+
+# - "xyz": given 3 markers recorded in virtual_markers[x] (can repeat the same marker as two of the three), make this virtual marker
+# have the x_pos of the first, the y_pos of the second, and the z_pos of the third
+
+# - "offset": this virtual marker will have the position of another marker, but can be offset by an amount on the 
+#x, y, and/or z axis. The marker will be recorded in virtual_markers[x][0] and the amount offset on each axis 
+#will be recorded in weights[]
+
+
+#Create marker methods for each different type of relationship:
 #Create virtual markers takes in a string name and a list of marker s that influence it and weights
-def create_marker(name, markers, weighted):
+def create_marker_weight(name, markers, weighted):
     center = Vector((0, 0, 0))
     weight_iter = 0
     for x in markers:
@@ -199,7 +214,7 @@ def create_marker(name, markers, weighted):
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.01
+    mt.empty_display_size = 0.2
     virtual_markers.append(mt)
     
 #Create virtual markers takes in a string name 
@@ -212,8 +227,23 @@ def create_marker_xyz(name, list):
     mt.name = name
     bpy.context.scene.collection.objects.link( mt )
     mt.location = coord
-    mt.empty_display_size = 0.01
+    mt.empty_display_size = 0.2
     virtual_markers.append(mt)
+    
+#Create virtual markers takes in a string name and a list of marker s that influence it and weights
+def create_marker_offset(name, markers, weighted):
+    center = markers[0].location
+    for index in range(len(weighted)):
+        center[index] += weighted[index]
+    coord = Vector((float(center[0]), float(center[1]), float(center[2])))
+    bpy.ops.object.add(type='EMPTY', location=coord)
+    mt = bpy.context.active_object  
+    mt.name = name
+    bpy.context.scene.collection.objects.link( mt )
+    mt.location = coord
+    mt.empty_display_size = 0.2
+    virtual_markers.append(mt)
+
 
 v_relationship = []
 virtual_markers = []
@@ -228,9 +258,12 @@ def update_virtual_data(relationship, surrounding, vweights, vname):
     weights.append(vweights)
     v_names.append(vname)
     if(relationship is "weight"):
-        create_marker(vname, surrounding, vweights)
-    else :
+        create_marker_weight(vname, surrounding, vweights)
+    elif(relationship is "xyz"):
         create_marker_xyz(vname, surrounding)
+    else:
+        create_marker_offset(vname, surrounding, vweights)
+        
     
 #-----------------------------------------------------------------
 #Define relationships and create virtual markers
@@ -258,17 +291,17 @@ update_virtual_data("weight", l3, w3, "v_R_Hand")
 #elbows : X is v_L_Wrist (virtual_markers[1]), 
 #Y is 7Steve_LElbowOut (order_of_markers[7]), 
 #Z is 7Steve_LElbowOut (order_of_markers[7]) 
-l4 = [order_of_markers[7], order_of_markers[7], order_of_markers[7]]
-w4 = []
-l4marker = update_virtual_data("xyz", l4, w4, "v_L_Elbow")
+l4 = [order_of_markers[7]]
+w4 = [.05, 0.0, 0.0]
+update_virtual_data("offset", l4, w4, "v_L_Elbow")
 
 
 #X is v_R_Wrist (virtual_markers[0], 
 #Y is 14Steve_RElbowOut (order_of_markers[14]),
 #and Z is 14Steve_RElbowOut (order_of_markers[14])
-l5 = [order_of_markers[14], order_of_markers[14], order_of_markers[14]]
-w5 = []
-update_virtual_data("xyz", l5, w5, "v_R_Elbow") 
+l5 = [order_of_markers[14]]
+w5 = [.05, 0.0, 0.0]
+update_virtual_data("offset", l5, w5, "v_R_Elbow") 
 
 #Shoulders
 #between 11Steve_RShoulderTop and 12Steve_RShoulderBack
@@ -318,7 +351,7 @@ l14 = [virtual_markers[12], virtual_markers[13]]
 w14 = [0.5, 0.5]
 update_virtual_data("weight", l14, w14, "v_Spine5") 
 
-#Leg2
+
 #RLeg1 between 24Steve_WaistRBack and 34Steve_RThigh
 l15 = [order_of_markers[24], order_of_markers[34]]
 w15 = [0.75, 0.25]
@@ -334,13 +367,16 @@ l17 = [virtual_markers[16], virtual_markers[15]]
 w17 = [0.5, 0.5]
 update_virtual_data("weight", l17, w17, "v_Spine6")
 
+#Knees 
 #RLeg2 between 36Steve_RShin and 35Steve_RKneeOut
-l18 = [order_of_markers[35], order_of_markers[36], order_of_markers[35]]
-update_virtual_data("xyz", l18, [], "v_RLeg2")
+l18 = [order_of_markers[35]]
+w17 = [0.0, .06, 0.0]
+update_virtual_data("offset", l18, w17, "v_RLeg2")
 
 #LLeg2 between 28Steve_LShin and 27Steve_LKneeOut
-l19 = [order_of_markers[27], order_of_markers[28], order_of_markers[27]]
-update_virtual_data("xyz", l19, [], "v_LLeg2") 
+l19 = [order_of_markers[27]]
+w17 = [0.0, -.06, 0.0]
+update_virtual_data("offset", l19, w17, "v_LLeg2") 
 
 #Feet 
 #LAnkle between 29Steve_LAnkleOut, 33Steve_LForefootIn, and 30Steve_LHeelBack
@@ -383,13 +419,19 @@ def update_virtual_marker(index):
             center += x.location*weights[index][weight_iter]
             weight_iter += 1
         coord = Vector((float(center[0]), float(center[1]), float(center[2])))
-        virtual_markers[index].location = coord
-    else:
+    elif(v_relationship[index] is "xyz"):
         x = surrounding_markers[index][0].location[0]
         y = surrounding_markers[index][1].location[1]
         z = surrounding_markers[index][2].location[2]
         coord = Vector((x, y, z))
-        virtual_markers[index].location = coord
+    else:
+        center = surrounding_markers[index][0].location
+        for n in range(len(weights[index])):
+            center[n] += weights[index][n]
+        coord = Vector((float(center[0]), float(center[1]), float(center[2])))
+    virtual_markers[index].location = coord
+        
+        
 
 #-----------------------------------------------------------------------------------
 
