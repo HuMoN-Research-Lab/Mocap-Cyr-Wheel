@@ -140,6 +140,8 @@ bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
 #Set origin of the plane to its median center
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+obj.hide_set(True)
+
 
 #Create vertex groups, one for each vertex
 vg = obj.vertex_groups.new(name="group0")
@@ -226,8 +228,6 @@ num_frames = len(file) - 11
 bpy.context.scene.frame_start = 1
 bpy.context.scene.frame_end = num_frames 
 
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-
 #create a new handler to change empty positions every frame
 def my_handler(scene): 
     frames_seen = 0
@@ -270,3 +270,8 @@ def unregister():
     bpy.app.handlers.frame_change_post.remove(my_handler)
         
 register()
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+obj.select_set(True)
+bpy.context.view_layer.objects.active = obj
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
