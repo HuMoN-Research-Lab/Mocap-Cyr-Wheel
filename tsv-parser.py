@@ -5,9 +5,23 @@ import time
 
 
 #To do 
-# - Fix up code in general and make output data 
-#- Update rerad-me with visuals of wheel and skeleton
-start_frame = 626
+#- rendering capabilities
+# - Fix up code in general and make output XML data 
+#- Update read-me with visuals of wheel and skeleton
+
+#Start frame of data
+frame_start = 626
+
+#default number of frames to output is all of them - change this value to an integer if you 
+#want to output less 
+#set to "all" to output all frames
+num_frames_output = "all"
+num_frames_output = 3
+#Change: the path of the npy file 
+input_npy = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv"
+#Change: the path of the folder you want to export xml file and png frames of animation to
+output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
+
 
 #script to read tsv files in blender
 
@@ -29,10 +43,10 @@ def create_data_arr(frame):
  
 #-----------------------------------------------------------------------------------
 #open file (adjust file location)
-with open(r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv", "r") as tsv_file:
+with open(input_npy, "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from the starting frame
-    frame = start_frame
+    frame = frame_start
     arr = create_data_arr(frame)
             
 #-----------------------------------------------------------------------------------
@@ -763,6 +777,7 @@ ring_obj.select_set(state=True)
 #Set origin of the plane to its median center
 #bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 ring_obj.hide_set(True)
+ring_obj.hide_render = True
 
 #Create vertex groups, one for each vertex
 vg = ring_obj.vertex_groups.new(name="group0")
@@ -815,6 +830,37 @@ ring.parent_type = 'VERTEX_3'
 n = len(ring_obj.data.vertices)
 ring.parent_vertices = range(1, 4)
 
+#-----------------------------------------------------------------------------------
+#material assignment
+ob = mesh_obob
+
+# Get material
+mat = bpy.data.materials.get("Material")
+if mat is None:
+    # create material
+    print("mat was none")
+    mat = bpy.data.materials.new(name="Material")
+
+# Assign it to object
+if ob.data.materials:
+    # assign to 1st material slot
+    ob.data.materials[0] = mat
+else:
+    # no slots
+    ob.data.materials.append(mat)
+
+#-----------------------------------------------------------------------------------
+'''
+#Adjust camera position / rotation
+bpy.ops.object.posemode_toggle()
+camera = bpy.data.objects["Camera"]
+camera.location = Vector((0, 0, -60))
+camera.rotation_mode = "QUATERNION"
+camera.rotation_quaternion[0] = 0
+camera.rotation_quaternion[1] = 20
+camera.rotation_quaternion[2] = -20
+camera.rotation_quaternion[3] = 0
+'''
 
 #--------------------------------------------------------------------
 #append handler function
@@ -837,3 +883,35 @@ bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
 armature_data.select_set(state=True)
+
+#-----------------------------------------------------------------------------------
+#script to export animation as pngs and add info to XML file
+print("Saving frames...")
+scene = bpy.context.scene
+#set the number of frames to output 
+#iterate through all frames
+for frame in range(frame_start, frame_start + 1):
+    #specify file path to the folder you want to export to
+    scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
+    scene.frame_set(frame)
+    #render frame
+    bpy.ops.render.render(write_still=True)
+    '''
+    #add information for each frame to XML file
+    child0 = SubElement(frames, 'frame' + str(frame))
+    child1 = SubElement(child0, 'markers')
+    child2 = SubElement(child0, 'armature')
+    current_marker = 0
+    #Log XML for each marker from original npy data
+    for col in markers_list:
+        coord = Vector((float(col[0]), float(col[1]), float(col[2])))
+        empty = order_of_markers[current_marker] 
+        marker_node = SubElement(child1, empty.name)
+        create_node(marker_node, "Location", str(coord))
+        current_marker += 1
+    #Log XML for each bone's location and rotation
+    for bone in bpy.data.objects['Armature'].pose.bones:
+        bone_node = SubElement(child2, bone.name)
+        create_node(bone_node, "Location", str(bone.location))
+        create_node(bone_node, "Rotation", str(bone.rotation_quaternion))
+        '''
