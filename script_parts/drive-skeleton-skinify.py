@@ -5,8 +5,6 @@ import time
 
 
 #To do 
-# - Fix knee and other markers by adding "offset" method
-# - apply skinify to make mesh and bones visible in render
 # - Fix up code in general and make output data 
 #- Update rerad-me with visuals of wheel and skeleton
 
@@ -166,6 +164,8 @@ obj.select_set(state=True)
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 
+
+
 def add_vertex_group_hooks():
     for x in range(len(verts)):
         #Create vertex groups, one for each vertex
@@ -182,6 +182,7 @@ def add_vertex_group_hooks():
         
 add_vertex_group_hooks()
         
+
     
 
 #--------------------------------------------------------------
@@ -576,17 +577,6 @@ def my_handler(scene):
         current_marker += 1 
     for index in range(len(virtual_markers)):
         update_virtual_marker(index)
-        
-        '''
-        if(current_marker == len(markers_list)):
-            frames_seen += 1
-            bpy.ops.pose.visual_transform_apply()
-            #bone.keyframe_insert(data_path = 'location')
-            if bone.rotation_mode == "QUATERNION":
-                #bone.keyframe_insert(data_path = 'rotation_quaternion')
-            else:
-                #bone.keyframe_insert(data_path = 'rotation_euler')
-            #bone.keyframe_insert(data_path = 'scale')
 
 #script to create a mesh of the armature 
 def CreateMesh():
@@ -728,7 +718,7 @@ for selected_object in bpy.data.objects:
 #Set armature active
 bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
-armature_data.select_set(state=True) '''
+armature_data.select_set(state=True) 
                 
 bpy.app.handlers.frame_change_post.clear()
 #function to register custom handler
