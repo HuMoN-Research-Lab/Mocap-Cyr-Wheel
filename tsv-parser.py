@@ -176,6 +176,13 @@ obj.select_set(state=True)
 #Set origin of the plane to its median center
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
+bpy.ops.object.modifier_add(type='SCREW')
+bpy.context.object.modifiers["Screw"].angle = 0
+bpy.context.object.modifiers["Screw"].steps = 2
+bpy.context.object.modifiers["Screw"].render_steps = 2
+bpy.context.object.modifiers["Screw"].screw_offset = 0.01
+bpy.context.object.modifiers["Screw"].use_merge_vertices = True
+
 
 
 
@@ -915,3 +922,4 @@ for frame in range(frame_start, frame_start + 1):
         create_node(bone_node, "Location", str(bone.location))
         create_node(bone_node, "Rotation", str(bone.rotation_quaternion))
         '''
+print("finished!")
