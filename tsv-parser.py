@@ -10,8 +10,12 @@ import time
 #- Update read-me with visuals of wheel and skeleton
 
 #Start frame of data
-frame_start = 626
+frame_start = 15947
 
+#Start frame of data
+frame_end = 31909
+
+frame_end = 15953
 #default number of frames to output is all of them - change this value to an integer if you 
 #want to output less 
 #set to "all" to output all frames
@@ -169,7 +173,7 @@ edges =  [(1,2),(2,3),(3,0),(0,1),(1,3), #head
 (30,33),(33,32),(28,29), (31,32)]
 
 #Create the mesh with the vertices and faces
-mesh.from_pydata(verts, edges, faces)
+obj.data.from_pydata(verts, edges, faces)
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 bpy.context.view_layer.objects.active = obj
 obj.select_set(state=True)
@@ -182,8 +186,6 @@ bpy.context.object.modifiers["Screw"].steps = 2
 bpy.context.object.modifiers["Screw"].render_steps = 2
 bpy.context.object.modifiers["Screw"].screw_offset = 0.01
 bpy.context.object.modifiers["Screw"].use_merge_vertices = True
-
-
 
 
 def add_vertex_group_hooks():
@@ -201,7 +203,8 @@ def add_vertex_group_hooks():
         bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
         
 add_vertex_group_hooks()
-        
+
+outline_mesh_obob = obj
 
     
 
@@ -618,7 +621,7 @@ def armToMesh( arm ):
 
 #Make vertices and faces 
 def boneGeometry( l1, l2, x, z, baseSize, l1Size, l2Size, base ):
-    x1 = x * .1 * .1 
+    x1 = x * .1 * .1
     z1 = z * .1 * .1
     
     x2 = Vector( (0, 0, 0) )
@@ -842,11 +845,11 @@ ring.parent_vertices = range(1, 4)
 ob = mesh_obob
 
 # Get material
-mat = bpy.data.materials.get("Material")
+mat = bpy.data.materials.get("Mesh_mat")
 if mat is None:
     # create material
     print("mat was none")
-    mat = bpy.data.materials.new(name="Material")
+    mat = bpy.data.materials.new(name="Mesh_mat")
 
 # Assign it to object
 if ob.data.materials:
@@ -855,6 +858,23 @@ if ob.data.materials:
 else:
     # no slots
     ob.data.materials.append(mat)
+
+
+mat2 = bpy.data.materials.get("mesh_outline")
+if mat2 is None:
+    # create material
+    print("mat was none")
+    mat2 = bpy.data.materials.new(name="mesh_outline")
+else:
+    print("mat was found")
+# Assign it to object
+if outline_mesh_obob.data.materials:
+    print("matmatmat")
+    # assign to 1st material slot
+    outline_mesh_obob.data.materials[0] = mat2   
+
+print("assigned materials")
+
 
 #-----------------------------------------------------------------------------------
 '''
@@ -884,7 +904,6 @@ register()
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 obj.select_set(True)
 bpy.context.view_layer.objects.active = obj
-bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 #Set armature active
 bpy.context.view_layer.objects.active = armature_data
