@@ -3,24 +3,16 @@ from mathutils import Matrix, Vector, Euler
 from math import *
 import time
 
-
-#To do 
-#- rendering capabilities
-# - Fix up code in general and make output XML data 
-#- Update read-me with visuals of wheel and skeleton
+#Start frame of data
+frame_start = 0
 
 #Start frame of data
-frame_start = 15947
+frame_end = frame_start + 1
 
-#Start frame of data
-frame_end = 31909
-
-frame_end = 15953
 #default number of frames to output is all of them - change this value to an integer if you 
 #want to output less 
 #set to "all" to output all frames
 num_frames_output = "all"
-num_frames_output = 3
 #Change: the path of the npy file 
 input_npy = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv"
 #Change: the path of the folder you want to export xml file and png frames of animation to
@@ -78,9 +70,13 @@ for col in arr:
     mt.name = name_arr[name]
     #increment name of empty
     name += 1
+    #link empty to this scene
     bpy.context.scene.collection.objects.link( mt )
+    #set empty location
     mt.location = coord
+    #set empty display size
     mt.empty_display_size = 0.1
+    #add empty to array order_of_markers so we can later access it 
     order_of_markers.append(mt)
     
 #Create armature object
@@ -103,6 +99,7 @@ col = bpy.data.collections.get("Collection")
 col.objects.link(obj)
 bpy.context.view_layer.objects.active = obj
 
+#list of all markers in order of array order_of_markers
 arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
     '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
     '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
@@ -119,11 +116,14 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
     '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
     '46Steve_CyrWheel05']
 
+#--------------------------------------------------------------------------
+#Create mesh outline of skeleton parts
  # verts made with XYZ coords
 verts = []
 faces = []
 iter = 0;
 for x in order_of_markers:
+    #add each marker location from order_of_markers to create a vertice there
     verts.append(x.location)
 
 #edges mesh connect
@@ -180,6 +180,7 @@ obj.select_set(state=True)
 #Set origin of the plane to its median center
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
+#Add screw modifier to make it thicker and visible in render
 bpy.ops.object.modifier_add(type='SCREW')
 bpy.context.object.modifiers["Screw"].angle = 0
 bpy.context.object.modifiers["Screw"].steps = 2
@@ -187,7 +188,7 @@ bpy.context.object.modifiers["Screw"].render_steps = 2
 bpy.context.object.modifiers["Screw"].screw_offset = 0.01
 bpy.context.object.modifiers["Screw"].use_merge_vertices = True
 
-
+#Add vertex groups to have each part of mesh controlled by hooks and corresponding empty object
 def add_vertex_group_hooks():
     for x in range(len(verts)):
         #Create vertex groups, one for each vertex
@@ -448,7 +449,7 @@ def update_virtual_marker(index):
         y = surrounding_markers[index][1].location[1]
         z = surrounding_markers[index][2].location[2]
         coord = Vector((x, y, z))
-    else:
+    else: #relationship is "offset"
         center = surrounding_markers[index][0].location
         for n in range(len(weights[index])):
             center[n] += weights[index][n]
@@ -558,15 +559,18 @@ def tuple_to_parented(bones):
     for bone_name, bone_head, bone_tail in bones:
         parent_to_empties(bone_name, bone_head, bone_tail)
 
+#set parents of bone heads and tails
 tuple_to_parented(list_of_bones_order)
+#make bone display in blender viewport stick
 bpy.context.object.data.display_type = 'STICK'
+#don't show armature in front of mesh
 bpy.context.object.show_in_front = False
 
 #-----------------------------------------------------------------------------------
 # Animate!
 #find number of frames in animation
 
-
+#find number of frames in file
 num_frames = len(file) - 11
 
 bpy.context.scene.frame_start = 1
@@ -621,6 +625,7 @@ def armToMesh( arm ):
 
 #Make vertices and faces 
 def boneGeometry( l1, l2, x, z, baseSize, l1Size, l2Size, base ):
+    #make bones thinner
     x1 = x * .1 * .1
     z1 = z * .1 * .1
     
@@ -753,9 +758,6 @@ for tracker in bpy.data.objects:
     #if the object is an empty
     if tracker.type == 'EMPTY' and ("CyrWheel" in tracker.name):
         wheel_markers.append(tracker)
-
-print("wheel markers")
-print(len(wheel_markers))
         
 #create a plane mesh connecting the wheel markers
 bpy.ops.object.mode_set(mode='EDIT', toggle=False)
@@ -770,6 +772,7 @@ verts_ring = []
 faces_ring = []
 face_num = 0
 
+#make all wheel markers have vertices and connect them all with a face
 for marker in wheel_markers:
     verts_ring.append(marker.location)
     faces_ring.append(face_num)
@@ -786,6 +789,8 @@ bpy.context.view_layer.objects.active = ring_obj
 ring_obj.select_set(state=True)
 #Set origin of the plane to its median center
 #bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+#Do not render the ring in final output
 ring_obj.hide_set(True)
 ring_obj.hide_render = True
 
@@ -807,6 +812,7 @@ vg.add([4], 1, "ADD")
 
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
+#Add hooks for each vertex group
 ring_obj.select_set(True)
 bpy.context.view_layer.objects.active = ring_obj
 bpy.ops.object.modifier_add(type='HOOK')
@@ -830,17 +836,20 @@ bpy.context.object.modifiers["Hook.004"].object = wheel_markers[4]
 bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
 
 
+#Find torus object in starter file 
 for obj in bpy.context.scene.objects:
     if obj.name.startswith("Torus"):
         ring = obj
         
-### set the relation to foot
+### parent the torus ring mesh object to the animated plane 
 ring.parent = ring_obj
 ring.parent_type = 'VERTEX_3'
 n = len(ring_obj.data.vertices)
+#Parent it to these 3 vertices
 ring.parent_vertices = range(1, 4)
 
 #-----------------------------------------------------------------------------------
+#Assign material to skeleton bones
 #material assignment
 ob = mesh_obob
 
@@ -860,6 +869,7 @@ else:
     ob.data.materials.append(mat)
 
 
+#Assign material to outline of mesh
 mat2 = bpy.data.materials.get("mesh_outline")
 if mat2 is None:
     # create material
@@ -869,12 +879,34 @@ else:
     print("mat was found")
 # Assign it to object
 if outline_mesh_obob.data.materials:
-    print("matmatmat")
     # assign to 1st material slot
-    outline_mesh_obob.data.materials[0] = mat2   
+     outline_mesh_obob.data.materials[0] = mat2   
+else:
+    # no slots
+    outline_mesh_obob.data.materials.append(mat2)
 
 print("assigned materials")
 
+
+#-----------------------------------------------------------------------------------
+#add visible sphere meshes on each marker
+
+for empty in order_of_markers:
+    bpy.ops.mesh.primitive_uv_sphere_add(enter_editmode=False, location=(0, 0, 0))
+    sphere = bpy.context.selected_objects[0]
+    sphere.parent = empty
+    sphere.matrix_world.translation = empty.matrix_world.translation
+    #size of sphere
+    sphere.scale[0] = 0.015
+    sphere.scale[1] = 0.015
+    sphere.scale[2] = 0.015
+    mat = bpy.data.materials.get("Material-marker")
+    if sphere.data.materials:
+        # assign to 1st material slot
+        sphere.data.materials[0] = mat
+    else:
+        # no slots
+        sphere.data.materials.append(mat)
 
 #-----------------------------------------------------------------------------------
 '''
@@ -916,7 +948,7 @@ print("Saving frames...")
 scene = bpy.context.scene
 #set the number of frames to output 
 #iterate through all frames
-for frame in range(frame_start, frame_start + 1):
+for frame in range(frame_start, frame_end):
     #specify file path to the folder you want to export to
     scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
     scene.frame_set(frame)
