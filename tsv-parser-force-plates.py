@@ -53,22 +53,6 @@ for obj in bpy.context.scene.objects:
         arrow_bottom = obj
     if obj.name.startswith("Arrow-top"):
         arrow_top = obj
-        
-
-FORCE_PLATE_CORNER_POSX_POSY_X	353.011101
-FORCE_PLATE_CORNER_POSX_POSY_Y	1295.030594
-FORCE_PLATE_CORNER_POSX_POSY_Z	-2.6015
-FORCE_PLATE_CORNER_NEGX_POSY_X	747.085989
-FORCE_PLATE_CORNER_NEGX_POSY_Y	1294.596434
-FORCE_PLATE_CORNER_NEGX_POSY_Z	-2.6923
-FORCE_PLATE_CORNER_NEGX_NEGY_X	746.431708
-FORCE_PLATE_CORNER_NEGX_NEGY_Y	700.785577
-FORCE_PLATE_CORNER_NEGX_NEGY_Z	-2.1361
-FORCE_PLATE_CORNER_POSX_NEGY_X	352.357
-FORCE_PLATE_CORNER_POSX_NEGY_Y	701.219738
-FORCE_PLATE_CORNER_POSX_NEGY_Z	-2.0453
-    
-
 
 # Create 2D array "arr" to hold all 3D coordinate info of markers
 #numerical data begins in column 11
@@ -256,7 +240,53 @@ add_vertex_group_hooks()
 
 outline_mesh_obob = obj
 
-    
+
+#force plate mesh
+'''
+FORCE_PLATE_CORNER_POSX_POSY_X	353.011101
+FORCE_PLATE_CORNER_POSX_POSY_Y	1295.030594
+FORCE_PLATE_CORNER_POSX_POSY_Z	-2.6015
+FORCE_PLATE_CORNER_NEGX_POSY_X	747.085989
+FORCE_PLATE_CORNER_NEGX_POSY_Y	1294.596434
+FORCE_PLATE_CORNER_NEGX_POSY_Z	-2.6923
+FORCE_PLATE_CORNER_NEGX_NEGY_X	746.431708
+FORCE_PLATE_CORNER_NEGX_NEGY_Y	700.785577
+FORCE_PLATE_CORNER_NEGX_NEGY_Z	-2.1361
+FORCE_PLATE_CORNER_POSX_NEGY_X	352.357
+FORCE_PLATE_CORNER_POSX_NEGY_Y	701.219738
+FORCE_PLATE_CORNER_POSX_NEGY_Z	-2.0453
+'''
+X_corner_pos = Vector((353.011101* 0.001, 1295.030594* 0.001, -2.6015* 0.001))
+X_corner_neg = Vector((747.085989* 0.001, 1294.596434* 0.001, -2.6923* 0.001))
+Neg_x_neg = Vector((746.431708* 0.001, 700.785577* 0.001, -2.1361* 0.001))
+pos_x_neg = Vector((352.357* 0.001, 701.219738* 0.001, -2.0453* 0.001))
+
+
+mesh_f = bpy.data.meshes.new("force_plate")  # add the new mesh
+obj_f = bpy.data.objects.new("force_plate_object", mesh_f)
+col = bpy.data.collections.get("Collection")
+col.objects.link(obj_f)
+bpy.context.view_layer.objects.active = obj_f
+
+verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
+edges_f =  [(0,1),(1,2),(2,3),(3,0)]
+
+#Create the mesh with the vertices and faces
+obj_f.data.from_pydata(verts_f, edges_f, [])
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+bpy.context.view_layer.objects.active = obj_f
+obj_f.select_set(state=True)
+#Set origin of the plane to its median center
+bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+a = [353.011101* 0.001, 1295.030594* 0.001, -2.6015* 0.001]
+b = [747.085989* 0.001, 1294.596434* 0.001, -2.6923* 0.001]
+c = [746.431708* 0.001, 700.785577* 0.001, -2.1361* 0.001]
+d = [352.357* 0.001, 701.219738* 0.001, -2.0453* 0.001]
+
+plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
+
+arrow_bottom.location = plate_origin
 
 #--------------------------------------------------------------
 #Virtual Markers!
@@ -654,15 +684,15 @@ def my_handler(scene):
         current_marker += 1 
     for index in range(len(virtual_markers)):
         update_virtual_marker(index)
-        '''
+    '''
     #update force plate
     current_force_plate_arr = create_data_arr_force_plate(frame)
     #Center of pressure from data is the base of the arrow
-    coord_bottom = Vector((float(current_force_plate_arr[2][0]), float(current_force_plate_arr[2][2]), float(current_force_plate_arr[2][1])))
+    coord_bottom = Vector((plate_origin[0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origin[1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origin[2] + (float(current_force_plate_arr[2][2])* 0.001)))
     print("bottom")
     print(coord_bottom)
     #force from data scaled by a number is the height of arrow 
-    coord_top = Vector((float(current_force_plate_arr[0][0]), float(current_force_plate_arr[0][2]), float(current_force_plate_arr[0][1])))
+    coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0]) * 0.1, coord_bottom[1] + float(current_force_plate_arr[0][1]) * 0.1, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.1))
     print("top")
     print(coord_top)
     arrow_bottom.location = coord_bottom
