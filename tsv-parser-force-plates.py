@@ -288,6 +288,58 @@ plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
 
 arrow_bottom.location = plate_origin
 
+
+
+#create arrow mesh
+
+#create a mesh of armature
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+mesh_arrow = bpy.data.meshes.new("mesh_arrow")  # add the new mesh
+obj_arrow = bpy.data.objects.new("obj_arrow", mesh_arrow)
+col = bpy.data.collections.get("Collection")
+col.objects.link(obj_arrow)
+bpy.context.view_layer.objects.active = obj_arrow
+
+verts_arrow = [arrow_bottom.location, arrow_top.location]
+faces_arrow = []
+edges_arrow =  [(0,1)]
+
+
+#Create the mesh with the vertices and faces
+obj_arrow.data.from_pydata(verts_arrow, edges_arrow, faces_arrow)
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+bpy.context.view_layer.objects.active = obj_arrow
+obj_arrow.select_set(state=True)
+#Set origin of the plane to its median center
+bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+#Add screw modifier to make it thicker and visible in render
+bpy.ops.object.modifier_add(type='SCREW')
+bpy.context.object.modifiers["Screw"].angle = 0
+bpy.context.object.modifiers["Screw"].steps = 2
+bpy.context.object.modifiers["Screw"].render_steps = 2
+bpy.context.object.modifiers["Screw"].screw_offset = 0.21
+bpy.context.object.modifiers["Screw"].use_merge_vertices = True
+
+order_of_arrow = [arrow_bottom, arrow_top]
+
+for x in range(len(verts_arrow)):
+    bpy.context.view_layer.objects.active = obj_arrow
+    obj_arrow.select_set(state=True)
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+    #Create vertex groups, one for each vertex
+    vg = obj_arrow.vertex_groups.new(name="group" + str(x))
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+    vg.add([x], 1, "ADD")
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj_arrow
+    bpy.ops.object.modifier_add(type='HOOK')
+    hook_name = "Hook" + str(x)
+    bpy.context.object.modifiers["Hook"].name = hook_name
+    bpy.context.object.modifiers[hook_name].object = order_of_arrow[x]
+    bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
+
 #--------------------------------------------------------------
 #Virtual Markers!
 
@@ -654,7 +706,7 @@ num_frames = len(file) - 11
 
 bpy.context.scene.frame_start = 1
 bpy.context.scene.frame_end = num_frames * 3000
-        
+plot_force_array = []
                 
 def my_handler(scene): 
     
@@ -665,38 +717,34 @@ def my_handler(scene):
     current_marker = 0 
     #find the current frame number
     frame = scene.frame_current
-    '''
-    #get the list of marker points from the current frame
-    markers_list = create_data_arr(frame - 1)
-    #current virtual marker 
-    current_virtual_marker = 0
-    #iterate through list of markers in this frame
-    for col in markers_list:
-        if (col[0] and col[1] and col[2]):
-            coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
-            empty = order_of_markers[current_marker] 
-            #change empty position : this is where the change in location every frame happens
-            if (col[0] is not '0.000') and (col[1] is not '0.000') and (col[2] is not '0.000'):
+    if (frame - 1) % 400 == 0:
+        #get the list of marker points from the current frame
+        markers_list = create_data_arr((frame - 1) / 400)
+        #current virtual marker 
+        current_virtual_marker = 0
+        #iterate through list of markers in this frame
+        for col in markers_list:
+            if (col[0] and col[1] and col[2]):
+                coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
+                empty = order_of_markers[current_marker] 
+                #change empty position : this is where the change in location every frame happens
                 empty.location = coord
-            #Set keyframes of the empty location at this frame to save the animation
-            #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
-            #increment counter of the number marker we are currently changing
-        current_marker += 1 
-    for index in range(len(virtual_markers)):
-        update_virtual_marker(index)
-    '''
+                #Set keyframes of the empty location at this frame to save the animation
+                #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
+                #increment counter of the number marker we are currently changing
+            current_marker += 1 
+        for index in range(len(virtual_markers)):
+            update_virtual_marker(index)
+    
     #update force plate
     current_force_plate_arr = create_data_arr_force_plate(frame)
     #Center of pressure from data is the base of the arrow
     coord_bottom = Vector((plate_origin[0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origin[1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origin[2] + (float(current_force_plate_arr[2][2])* 0.001)))
-    print("bottom")
-    print(coord_bottom)
     #force from data scaled by a number is the height of arrow 
     coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0]) * 0.1, coord_bottom[1] + float(current_force_plate_arr[0][1]) * 0.1, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.1))
-    print("top")
-    print(coord_top)
     arrow_bottom.location = coord_bottom
     arrow_top.location = coord_top
+    plot_force_array.append(coord_top)
     
 
 #script to create a mesh of the armature 
