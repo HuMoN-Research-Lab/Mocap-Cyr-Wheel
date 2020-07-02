@@ -4,7 +4,7 @@ from math import *
 import time
 
 #Start frame of data
-frame_start = 0
+frame_start = 19655
 
 #Start frame of data
 frame_end = frame_start + 1
@@ -14,7 +14,7 @@ frame_end = frame_start + 1
 #set to "all" to output all frames
 num_frames_output = "all"
 #Change: the path of the tsv file 
-input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv"
+input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate0007.tsv"
 #input force plate data
 input_force_plate = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv"
 #Change: the path of the folder you want to export xml file and png frames of animation to
@@ -45,14 +45,15 @@ with open(input_force_plate, "r") as tsv_file:
     #the data from the starting frame
     frame = frame_start
     force_plate_arr =  create_data_arr_force_plate(frame)
-    
-print(force_plate_arr)
+
 
 for obj in bpy.context.scene.objects:
     if obj.name.startswith("Arrow-bottom"):
         arrow_bottom = obj
     if obj.name.startswith("Arrow-top"):
         arrow_top = obj
+    if obj.name.startswith("Cone"):
+        cone = obj
 
 # Create 2D array "arr" to hold all 3D coordinate info of markers
 #numerical data begins in column 11
@@ -288,6 +289,14 @@ plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
 
 arrow_bottom.location = plate_origin
 
+bpy.context.view_layer.objects.active = obj_f
+obj_f.select_set(state=True)
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0.00118261, -0.0109036, 0.00548362), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+#bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(-0.00142037, 1.1027e-05, 0.0276659), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+bpy.ops.mesh.edge_face_add()
+
+
 
 
 #create arrow mesh
@@ -318,7 +327,7 @@ bpy.ops.object.modifier_add(type='SCREW')
 bpy.context.object.modifiers["Screw"].angle = 0
 bpy.context.object.modifiers["Screw"].steps = 2
 bpy.context.object.modifiers["Screw"].render_steps = 2
-bpy.context.object.modifiers["Screw"].screw_offset = 0.21
+bpy.context.object.modifiers["Screw"].screw_offset = 0.11
 bpy.context.object.modifiers["Screw"].use_merge_vertices = True
 
 order_of_arrow = [arrow_bottom, arrow_top]
@@ -705,11 +714,13 @@ bpy.context.object.show_in_front = False
 num_frames = len(file) - 11
 
 bpy.context.scene.frame_start = 1
-bpy.context.scene.frame_end = num_frames * 3000
+bpy.context.scene.frame_end = num_frames * 400
 plot_force_array = []
+current_skel_frame = [0]
+bpy.context.scene.render.fps = 1200
+
                 
 def my_handler(scene): 
-    
     frames_seen = 0
     #must be in pose mode to set keyframes
     bpy.ops.object.mode_set(mode='POSE')
@@ -717,34 +728,49 @@ def my_handler(scene):
     current_marker = 0 
     #find the current frame number
     frame = scene.frame_current
-    if (frame - 1) % 400 == 0:
+    current_frame_skeleton_data = current_skel_frame[0]
+    if (frame - 1) % 4 == 0:
+        current_skel_frame[0] = int((frame - 1) / 4)
         #get the list of marker points from the current frame
-        markers_list = create_data_arr((frame - 1) / 400)
+        #markers_list = create_data_arr((frame - 1) / 400)
+    markers_list = create_data_arr(current_skel_frame[0])
         #current virtual marker 
-        current_virtual_marker = 0
-        #iterate through list of markers in this frame
-        for col in markers_list:
-            if (col[0] and col[1] and col[2]):
-                coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
-                empty = order_of_markers[current_marker] 
-                #change empty position : this is where the change in location every frame happens
-                empty.location = coord
-                #Set keyframes of the empty location at this frame to save the animation
-                #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
-                #increment counter of the number marker we are currently changing
-            current_marker += 1 
-        for index in range(len(virtual_markers)):
-            update_virtual_marker(index)
-    
+    current_virtual_marker = 0
+    #iterate through list of markers in this frame
+    for col in markers_list:
+        if (col[0] and col[1] and col[2]):
+            coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
+            empty = order_of_markers[current_marker] 
+            #change empty position : this is where the change in location every frame happens
+            empty.location = coord
+            #Set keyframes of the empty location at this frame to save the animation
+            #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
+            #increment counter of the number marker we are currently changing
+        current_marker += 1 
+    for index in range(len(virtual_markers)):
+        update_virtual_marker(index)
     #update force plate
     current_force_plate_arr = create_data_arr_force_plate(frame)
     #Center of pressure from data is the base of the arrow
     coord_bottom = Vector((plate_origin[0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origin[1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origin[2] + (float(current_force_plate_arr[2][2])* 0.001)))
     #force from data scaled by a number is the height of arrow 
-    coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0]) * 0.1, coord_bottom[1] + float(current_force_plate_arr[0][1]) * 0.1, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.1))
+    coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
+    if coord_top[2] <= 0:
+        #Do not render the ring in final output
+        obj_arrow.hide_set(True)
+        obj_arrow.hide_render = True
+        cone.hide_set(True)
+        cone.hide_render = True
+    else:
+        #render the ring in final output
+        obj_arrow.hide_set(False)
+        obj_arrow.hide_render = False
+        cone.hide_set(False)
+        cone.hide_render = False
+        #coord_top[2] *= 10
     arrow_bottom.location = coord_bottom
     arrow_top.location = coord_top
-    plot_force_array.append(coord_top)
+    
     
 
 #script to create a mesh of the armature 
@@ -926,6 +952,38 @@ if outline_mesh_obob.data.materials:
 else:
     # no slots
     outline_mesh_obob.data.materials.append(mat2)
+    
+#Arrow  
+mat3 = bpy.data.materials.get("walls")
+if mat3 is None:
+    # create material
+    print("mat was none")
+    mat3 = bpy.data.materials.new(name="walls")
+else:
+    print("mat was found")
+# Assign it to object
+if obj_arrow.data.materials:
+    # assign to 1st material slot
+     obj_arrow.data.materials[0] = mat3   
+else:
+    # no slots
+    obj_arrow.data.materials.append(mat3)
+
+#force plate
+mat4 = bpy.data.materials.get("walls")
+if mat4 is None:
+    # create material
+    print("mat was none")
+    mat4 = bpy.data.materials.new(name="walls")
+else:
+    print("mat was found")
+# Assign it to object
+if obj_f.data.materials:
+    # assign to 1st material slot
+     obj_f.data.materials[0] = mat4   
+else:
+    # no slots
+    obj_f.data.materials.append(mat4)
 
 print("assigned materials")
 
