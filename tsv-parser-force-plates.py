@@ -916,6 +916,106 @@ bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
 armature_data.select_set(state=True) 
 
+#---------------------------------------------------------------------------------
+#Wheel
+
+wheel_markers = [] 
+
+#all of the wheel markers
+for tracker in bpy.data.objects:
+    #if the object is an empty
+    if tracker.type == 'EMPTY' and ("CyrWheel" in tracker.name):
+        wheel_markers.append(tracker)
+        
+#create a plane mesh connecting the wheel markers
+bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+ring_mesh = bpy.data.meshes.new("ring_plane")  # add the new mesh
+ring_obj = bpy.data.objects.new("ring_plane_object", ring_mesh)
+col = bpy.data.collections.get("Collection")
+col.objects.link(ring_obj)
+bpy.context.view_layer.objects.active = ring_obj
+
+ # 5 verts made with XYZ coords
+verts_ring = []
+faces_ring = []
+face_num = 0
+
+#make all wheel markers have vertices and connect them all with a face
+for marker in wheel_markers:
+    verts_ring.append(marker.location)
+    faces_ring.append(face_num)
+    face_num += 1
+    
+edges_ring = []
+
+faces_ring = [faces_ring]
+
+#Create the mesh with the vertices and faces
+ring_mesh.from_pydata(verts_ring, edges_ring, faces_ring)
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+bpy.context.view_layer.objects.active = ring_obj
+ring_obj.select_set(state=True)
+#Set origin of the plane to its median center
+#bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+#Do not render the ring in final output
+ring_obj.hide_set(True)
+ring_obj.hide_render = True
+
+#Create vertex groups, one for each vertex
+vg = ring_obj.vertex_groups.new(name="group0")
+vg.add([0], 1, "ADD")
+
+vg = ring_obj.vertex_groups.new(name="group1")
+vg.add([1], 1, "ADD")
+
+vg = ring_obj.vertex_groups.new(name="group2")
+vg.add([2], 1, "ADD")
+
+vg = ring_obj.vertex_groups.new(name="group3")
+vg.add([3], 1, "ADD")
+
+vg = ring_obj.vertex_groups.new(name="group4")
+vg.add([4], 1, "ADD")
+
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+#Add hooks for each vertex group
+ring_obj.select_set(True)
+bpy.context.view_layer.objects.active = ring_obj
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook"].object = wheel_markers[0]
+bpy.context.object.modifiers["Hook"].vertex_group = "group0"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.001"].object = wheel_markers[1]
+bpy.context.object.modifiers["Hook.001"].vertex_group = "group1"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.002"].object = wheel_markers[2]
+bpy.context.object.modifiers["Hook.002"].vertex_group = "group2"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.003"].object = wheel_markers[3]
+bpy.context.object.modifiers["Hook.003"].vertex_group = "group3"
+
+bpy.ops.object.modifier_add(type='HOOK')
+bpy.context.object.modifiers["Hook.004"].object = wheel_markers[4]
+bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
+
+
+#Find torus object in starter file 
+for obj in bpy.context.scene.objects:
+    if obj.name.startswith("Torus"):
+        ring = obj
+        
+### parent the torus ring mesh object to the animated plane 
+ring.parent = ring_obj
+ring.parent_type = 'VERTEX_3'
+n = len(ring_obj.data.vertices)
+#Parent it to these 3 vertices
+ring.parent_vertices = range(1, 4)
+
 #-----------------------------------------------------------------------------------
 #Assign material to skeleton bones
 #material assignment
@@ -1048,7 +1148,7 @@ print("Saving frames...")
 scene = bpy.context.scene
 #set the number of frames to output 
 #iterate through all frames
-for frame in range(frame_start, frame_end):
+for frame in range(0, frame_end):
     #specify file path to the folder you want to export to
     scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
     scene.frame_set(frame)
