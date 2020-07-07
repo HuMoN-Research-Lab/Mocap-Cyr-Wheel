@@ -1054,11 +1054,11 @@ else:
     outline_mesh_obob.data.materials.append(mat2)
     
 #Arrow  
-mat3 = bpy.data.materials.get("walls")
+mat3 = bpy.data.materials.get("Arrow_mat")
 if mat3 is None:
     # create material
     print("mat was none")
-    mat3 = bpy.data.materials.new(name="walls")
+    mat3 = bpy.data.materials.new(name="Arrow_mat")
 else:
     print("mat was found")
 # Assign it to object
@@ -1148,7 +1148,7 @@ print("Saving frames...")
 scene = bpy.context.scene
 #set the number of frames to output 
 #iterate through all frames
-for frame in range(0, frame_end):
+for frame in range(0, 1):
     #specify file path to the folder you want to export to
     scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
     scene.frame_set(frame)
