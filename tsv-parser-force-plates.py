@@ -64,42 +64,8 @@ for x in range(len(input_force_plate_arr)):
         force_plate_arr_temp =  create_data_arr_force_plate(frame, x)
         force_plate_arr.append(force_plate_arr_temp)
         
-
-cones = []
 arrow_bodies = []
-'''
-for obj in bpy.context.scene.objects:
-    if obj.name.startswith("Arrow-bottom0"):
-        arrow_bottoms.append[obj]
-    if obj.name.startswith("Arrow-top0"):
-        arrow_tops.append[obj]
-    if obj.name.startswith("Cone0"):
-        cones.append[obj]
-    if obj.name.startswith("Arrow-bottom1"):
-        arrow_bottoms.append[obj]
-    if obj.name.startswith("Arrow-top1"):
-        arrow_tops.append[obj]
-    if obj.name.startswith("Cone1"):
-        cones.append[obj]
-    if obj.name.startswith("Arrow-bottom2"):
-        arrow_bottoms.append[obj]
-    if obj.name.startswith("Arrow-top2"):
-        arrow_tops.append[obj]
-    if obj.name.startswith("Cone2"):
-        cones.append[obj]
-    if obj.name.startswith("Arrow-bottom3"):
-        arrow_bottoms.append[obj]
-    if obj.name.startswith("Arrow-top3"):
-        arrow_tops.append[obj]
-    if obj.name.startswith("Cone3"):
-        cones.append[obj]
-    if obj.name.startswith("Arrow-bottom4"):
-        arrow_bottoms.append[obj]
-    if obj.name.startswith("Arrow-top4"):
-        arrow_tops.append[obj]
-    if obj.name.startswith("Cone4"):
-        cones.append[obj]
-'''        
+    
 # Create 2D array "arr" to hold all 3D coordinate info of markers
 #numerical data begins in column 11
 def create_data_arr(frame):
@@ -290,6 +256,8 @@ plate_number = 0
 
 print(force_plate_positions)
 
+plate_origins = []
+
 #force plate mesh
 for force_plate_position in force_plate_positions:
     print("froce")
@@ -327,7 +295,8 @@ for force_plate_position in force_plate_positions:
 
 
     plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
-    print(plate_origin)
+    
+    plate_origins.append(plate_origin)
     #set arrow bottom to center of plate
     bpy.data.objects["Arrow-bottom" + str(plate_number)].location = plate_origin
 
@@ -742,6 +711,11 @@ def parent_to_empties(bone_name, head, tail):
 def tuple_to_parented(bones):
     for bone_name, bone_head, bone_tail in bones:
         parent_to_empties(bone_name, bone_head, bone_tail)
+        
+#Set armature active
+bpy.context.view_layer.objects.active = armature_data
+#Set armature selected
+armature_data.select_set(state=True)
 
 #set parents of bone heads and tails
 tuple_to_parented(list_of_bones_order)
@@ -793,27 +767,30 @@ def my_handler(scene):
         current_marker += 1 
     for index in range(len(virtual_markers)):
         update_virtual_marker(index)
+        
     #update force plate
-    current_force_plate_arr = create_data_arr_force_plate(frame)
-    #Center of pressure from data is the base of the arrow
-    coord_bottom = Vector((plate_origin[0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origin[1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origin[2] + (float(current_force_plate_arr[2][2])* 0.001)))
-    #force from data scaled by a number is the height of arrow 
-    coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
-    if coord_top[2] <= 0:
-        #Do not render the ring in final output
-        obj_arrow.hide_set(True)
-        obj_arrow.hide_render = True
-        cone.hide_set(True)
-        cone.hide_render = True
-    else:
-        #render the ring in final output
-        obj_arrow.hide_set(False)
-        obj_arrow.hide_render = False
-        cone.hide_set(False)
-        cone.hide_render = False
-        #coord_top[2] *= 10
-    arrow_bottom.location = coord_bottom
-    arrow_top.location = coord_top
+    for plate_number in range(len(input_force_plate_arr)):
+        current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
+        print("current_force_arr")
+        print(current_force_plate_arr)
+        #Center of pressure from data is the base of the arrow
+        coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
+        #force from data scaled by a number is the height of arrow 
+        coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
+        if coord_top[2] <= 0:
+            #Do not render the ring in final output
+            obj_arrow.hide_set(True)
+            obj_arrow.hide_render = True
+            #cone.hide_set(True)
+            #cone.hide_render = True
+        else:
+            #render the ring in final output
+            bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(False)
+            bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = False
+            #cone.hide_set(False)
+            #cone.hide_render = False
+            bpy.data.objects["Arrow-bottom" + str(plate_number)].location = coord_bottom
+            bpy.data.objects["Arrow-top" + str(plate_number)].location = coord_top
     
     
 
@@ -938,7 +915,7 @@ mesh_obob = CreateMesh()
 
 #-----------------------------------------------------------------------------------
 # Clean up the mesh by removing duplicate vertices, make sure all faces are quads, etc
-
+'''
 checked = set()
 for selected_object in bpy.data.objects:
     if selected_object.type != 'MESH':
@@ -949,7 +926,7 @@ for selected_object in bpy.data.objects:
     else:
         checked.add(meshdata)
     bpy.context.view_layer.objects.active = selected_object
-    bpy.ops.object.editmode_toggle()
+    bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.remove_doubles()
     bpy.ops.mesh.tris_convert_to_quads()
@@ -959,7 +936,7 @@ for selected_object in bpy.data.objects:
 bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
 armature_data.select_set(state=True) 
-
+'''
 #---------------------------------------------------------------------------------
 #Wheel
 
