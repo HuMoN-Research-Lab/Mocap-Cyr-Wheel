@@ -16,7 +16,13 @@ num_frames_output = "all"
 #Change: the path of the tsv file 
 input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate0007.tsv"
 #input force plate data
-input_force_plate = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv"
+input_force_plate_arr = []
+input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
+input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_2.tsv")
+input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_3.tsv")
+input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_4.tsv")
+input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_5.tsv")
+
 #Change: the path of the folder you want to export xml file and png frames of animation to
 output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
 
@@ -25,8 +31,8 @@ output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
 
 #read force plate data 
 #open file (adjust file location)
-def create_data_arr_force_plate(frame):
-    current_row = force_file[frame + 27]
+def create_data_arr_force_plate(frame, plate_id):
+    current_row = force_file[plate_id][frame + 27]
     cols, rows = (3, 3)
     arr = [[None]*cols for _ in range(rows)]
     count = 0
@@ -38,23 +44,62 @@ def create_data_arr_force_plate(frame):
         arr[count_row][count] = current_row[x]
         count += 1
     return arr
-    
 
-with open(input_force_plate, "r") as tsv_file:
-    force_file = list(csv.reader(tsv_file, delimiter='\t'))
-    #the data from the starting frame
-    frame = frame_start
-    force_plate_arr =  create_data_arr_force_plate(frame)
+#an array holding all force files info
+force_file = []
+#hold force plate data for one frame
+force_plate_arr = []
+#array holding arrays of each force plate's X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg
+force_plate_positions = []
 
+for x in range(len(input_force_plate_arr)):
+    print("x" + str(x))
+    with open(input_force_plate_arr[x], "r") as tsv_file:
+        force_file_temp = list(csv.reader(tsv_file, delimiter='\t'))
+        force_plate_positions.append([[force_file_temp[9][1],force_file_temp[10][1], force_file_temp[11][1]], [force_file_temp[12][1], force_file_temp[13][1], force_file_temp[14][1]],
+        [force_file_temp[15][1], force_file_temp[16][1], force_file_temp[17][1]], [force_file_temp[18][1], force_file_temp[19][1], force_file_temp[20][1]]])
+        force_file.append(force_file_temp)
+        #the data from the starting frame
+        frame = frame_start
+        force_plate_arr_temp =  create_data_arr_force_plate(frame, x)
+        force_plate_arr.append(force_plate_arr_temp)
+        
 
+cones = []
+arrow_bodies = []
+'''
 for obj in bpy.context.scene.objects:
-    if obj.name.startswith("Arrow-bottom"):
-        arrow_bottom = obj
-    if obj.name.startswith("Arrow-top"):
-        arrow_top = obj
-    if obj.name.startswith("Cone"):
-        cone = obj
-
+    if obj.name.startswith("Arrow-bottom0"):
+        arrow_bottoms.append[obj]
+    if obj.name.startswith("Arrow-top0"):
+        arrow_tops.append[obj]
+    if obj.name.startswith("Cone0"):
+        cones.append[obj]
+    if obj.name.startswith("Arrow-bottom1"):
+        arrow_bottoms.append[obj]
+    if obj.name.startswith("Arrow-top1"):
+        arrow_tops.append[obj]
+    if obj.name.startswith("Cone1"):
+        cones.append[obj]
+    if obj.name.startswith("Arrow-bottom2"):
+        arrow_bottoms.append[obj]
+    if obj.name.startswith("Arrow-top2"):
+        arrow_tops.append[obj]
+    if obj.name.startswith("Cone2"):
+        cones.append[obj]
+    if obj.name.startswith("Arrow-bottom3"):
+        arrow_bottoms.append[obj]
+    if obj.name.startswith("Arrow-top3"):
+        arrow_tops.append[obj]
+    if obj.name.startswith("Cone3"):
+        cones.append[obj]
+    if obj.name.startswith("Arrow-bottom4"):
+        arrow_bottoms.append[obj]
+    if obj.name.startswith("Arrow-top4"):
+        arrow_tops.append[obj]
+    if obj.name.startswith("Cone4"):
+        cones.append[obj]
+'''        
 # Create 2D array "arr" to hold all 3D coordinate info of markers
 #numerical data begins in column 11
 def create_data_arr(frame):
@@ -241,113 +286,112 @@ add_vertex_group_hooks()
 
 outline_mesh_obob = obj
 
+plate_number = 0
+
+print(force_plate_positions)
 
 #force plate mesh
-'''
-FORCE_PLATE_CORNER_POSX_POSY_X	353.011101
-FORCE_PLATE_CORNER_POSX_POSY_Y	1295.030594
-FORCE_PLATE_CORNER_POSX_POSY_Z	-2.6015
-FORCE_PLATE_CORNER_NEGX_POSY_X	747.085989
-FORCE_PLATE_CORNER_NEGX_POSY_Y	1294.596434
-FORCE_PLATE_CORNER_NEGX_POSY_Z	-2.6923
-FORCE_PLATE_CORNER_NEGX_NEGY_X	746.431708
-FORCE_PLATE_CORNER_NEGX_NEGY_Y	700.785577
-FORCE_PLATE_CORNER_NEGX_NEGY_Z	-2.1361
-FORCE_PLATE_CORNER_POSX_NEGY_X	352.357
-FORCE_PLATE_CORNER_POSX_NEGY_Y	701.219738
-FORCE_PLATE_CORNER_POSX_NEGY_Z	-2.0453
-'''
-X_corner_pos = Vector((353.011101* 0.001, 1295.030594* 0.001, -2.6015* 0.001))
-X_corner_neg = Vector((747.085989* 0.001, 1294.596434* 0.001, -2.6923* 0.001))
-Neg_x_neg = Vector((746.431708* 0.001, 700.785577* 0.001, -2.1361* 0.001))
-pos_x_neg = Vector((352.357* 0.001, 701.219738* 0.001, -2.0453* 0.001))
+for force_plate_position in force_plate_positions:
+    print("froce")
+    print(force_plate_position)
+    #iterate through array holding all force plate locations and create a mesh for each one
+    X_corner_pos = Vector((float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001))
+    X_corner_neg = Vector((float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001))
+    Neg_x_neg = Vector((float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001))
+    pos_x_neg = Vector((float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001))
+
+    mesh_f = bpy.data.meshes.new("force_plate" + str(plate_number))  # add the new mesh
+    obj_f = bpy.data.objects.new("force_plate_object" + str(plate_number), mesh_f)
+    col = bpy.data.collections.get("Collection")
+    col.objects.link(obj_f)
+    bpy.context.view_layer.objects.active = obj_f
+
+    verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
+    edges_f =  [(0,1),(1,2),(2,3),(3,0)]
+    
+    print(verts_f)
+
+    #Create the mesh with the vertices and faces
+    obj_f.data.from_pydata(verts_f, edges_f, [])
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+    bpy.context.view_layer.objects.active = obj_f
+    obj_f.select_set(state=True)
+    #Set origin of the plane to its median center
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+    #find plate origin (in the center of the force plate, so the average of all corners)
+    a = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
+    b = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
+    c = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
+    d = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
 
 
-mesh_f = bpy.data.meshes.new("force_plate")  # add the new mesh
-obj_f = bpy.data.objects.new("force_plate_object", mesh_f)
-col = bpy.data.collections.get("Collection")
-col.objects.link(obj_f)
-bpy.context.view_layer.objects.active = obj_f
+    plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
+    print(plate_origin)
+    #set arrow bottom to center of plate
+    bpy.data.objects["Arrow-bottom" + str(plate_number)].location = plate_origin
 
-verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
-edges_f =  [(0,1),(1,2),(2,3),(3,0)]
-
-#Create the mesh with the vertices and faces
-obj_f.data.from_pydata(verts_f, edges_f, [])
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-bpy.context.view_layer.objects.active = obj_f
-obj_f.select_set(state=True)
-#Set origin of the plane to its median center
-bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-
-a = [353.011101* 0.001, 1295.030594* 0.001, -2.6015* 0.001]
-b = [747.085989* 0.001, 1294.596434* 0.001, -2.6923* 0.001]
-c = [746.431708* 0.001, 700.785577* 0.001, -2.1361* 0.001]
-d = [352.357* 0.001, 701.219738* 0.001, -2.0453* 0.001]
-
-plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
-
-arrow_bottom.location = plate_origin
-
-bpy.context.view_layer.objects.active = obj_f
-obj_f.select_set(state=True)
-bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0.00118261, -0.0109036, 0.00548362), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
-#bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(-0.00142037, 1.1027e-05, 0.0276659), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
-bpy.ops.mesh.edge_face_add()
+    bpy.context.view_layer.objects.active = obj_f
+    obj_f.select_set(state=True)
+    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0.00118261, -0.0109036, 0.00548362), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+    #bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(-0.00142037, 1.1027e-05, 0.0276659), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+    bpy.ops.mesh.edge_face_add()
 
 
 
 
-#create arrow mesh
+    #create arrow mesh
 
-#create a mesh of armature
-bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-mesh_arrow = bpy.data.meshes.new("mesh_arrow")  # add the new mesh
-obj_arrow = bpy.data.objects.new("obj_arrow", mesh_arrow)
-col = bpy.data.collections.get("Collection")
-col.objects.link(obj_arrow)
-bpy.context.view_layer.objects.active = obj_arrow
+    #create a mesh of armature
+    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    mesh_arrow = bpy.data.meshes.new("mesh_arrow" + str(plate_number))  # add the new mesh
+    obj_arrow = bpy.data.objects.new("obj_arrow" + str(plate_number), mesh_arrow)
+    col = bpy.data.collections.get("Collection")
+    col.objects.link(obj_arrow)
+    bpy.context.view_layer.objects.active = obj_arrow
 
-verts_arrow = [arrow_bottom.location, arrow_top.location]
-faces_arrow = []
-edges_arrow =  [(0,1)]
+    verts_arrow = [bpy.data.objects["Arrow-bottom" + str(plate_number)].location, bpy.data.objects["Arrow-top" + str(plate_number)].location]
+    faces_arrow = []
+    edges_arrow =  [(0,1)]
 
 
-#Create the mesh with the vertices and faces
-obj_arrow.data.from_pydata(verts_arrow, edges_arrow, faces_arrow)
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-bpy.context.view_layer.objects.active = obj_arrow
-obj_arrow.select_set(state=True)
-#Set origin of the plane to its median center
-bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-
-#Add screw modifier to make it thicker and visible in render
-bpy.ops.object.modifier_add(type='SCREW')
-bpy.context.object.modifiers["Screw"].angle = 0
-bpy.context.object.modifiers["Screw"].steps = 2
-bpy.context.object.modifiers["Screw"].render_steps = 2
-bpy.context.object.modifiers["Screw"].screw_offset = 0.11
-bpy.context.object.modifiers["Screw"].use_merge_vertices = True
-
-order_of_arrow = [arrow_bottom, arrow_top]
-
-for x in range(len(verts_arrow)):
+    #Create the mesh with the vertices and faces
+    obj_arrow.data.from_pydata(verts_arrow, edges_arrow, faces_arrow)
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
     bpy.context.view_layer.objects.active = obj_arrow
     obj_arrow.select_set(state=True)
-    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-    #Create vertex groups, one for each vertex
-    vg = obj_arrow.vertex_groups.new(name="group" + str(x))
-    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-    vg.add([x], 1, "ADD")
-    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj_arrow
-    bpy.ops.object.modifier_add(type='HOOK')
-    hook_name = "Hook" + str(x)
-    bpy.context.object.modifiers["Hook"].name = hook_name
-    bpy.context.object.modifiers[hook_name].object = order_of_arrow[x]
-    bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
+    #Set origin of the plane to its median center
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+    #Add screw modifier to make it thicker and visible in render
+    bpy.ops.object.modifier_add(type='SCREW')
+    bpy.context.object.modifiers["Screw"].angle = 0
+    bpy.context.object.modifiers["Screw"].steps = 2
+    bpy.context.object.modifiers["Screw"].render_steps = 2
+    bpy.context.object.modifiers["Screw"].screw_offset = 0.11
+    bpy.context.object.modifiers["Screw"].use_merge_vertices = True
+
+    order_of_arrow = [bpy.data.objects["Arrow-bottom" + str(plate_number)], bpy.data.objects["Arrow-top" + str(plate_number)]]
+
+    for x in range(len(verts_arrow)):
+        bpy.context.view_layer.objects.active = obj_arrow
+        obj_arrow.select_set(state=True)
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        #Create vertex groups, one for each vertex
+        vg = obj_arrow.vertex_groups.new(name="group" + str(x))
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        vg.add([x], 1, "ADD")
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj_arrow
+        bpy.ops.object.modifier_add(type='HOOK')
+        hook_name = "Hook" + str(x)
+        bpy.context.object.modifiers["Hook"].name = hook_name
+        bpy.context.object.modifiers[hook_name].object = order_of_arrow[x]
+        bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
+        
+    plate_number += 1
 
 #--------------------------------------------------------------
 #Virtual Markers!
