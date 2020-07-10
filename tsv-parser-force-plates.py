@@ -29,6 +29,8 @@ output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
 
 #script to read tsv files in blender
 
+#make variables 
+
 #read force plate data 
 #open file (adjust file location)
 def create_data_arr_force_plate(frame, plate_id):
@@ -252,22 +254,51 @@ add_vertex_group_hooks()
 
 outline_mesh_obob = obj
 
+
+
 plate_number = 0
 
 print(force_plate_positions)
 
+#array of each plate's origin(center)
 plate_origins = []
+
+#positions of force plates on ground
+force_plate_positions =  [[[ 349.09483744, 1310.58521453,   -2.58046351],
+       [ 749.09483744, 1310.58521453,   -2.58046351],
+       [ 749.09483744,  710.58521453,   -2.58046351],
+       [ 349.09483744,  710.58521453,   -2.58046351]],
+       
+        [[ 350.11955184, 2065.44425079,   -3.28232872],
+       [ 750.11955184, 2065.44425079,   -3.28232872],
+       [ 750.11955184, 1465.44425079,   -3.28232872],
+       [ 350.11955184, 1465.44425079,   -3.28232872]],
+       
+        [[353.54090363, 552.47353625,  -1.88149265],
+       [753.54090363, 552.47353625,  -1.88149265],
+       [753.54090363, -47.52646375,  -1.88149265],
+       [353.54090363, -47.52646375,  -1.88149265]],
+       
+        [[ 760.3469681 , 2065.06152546,   -4.22722817],
+       [1160.3469681 , 2065.06152546,   -4.22722817],
+       [1160.3469681 , 1465.06152546,   -4.22722817],
+       [ 760.3469681 , 1465.06152546,   -4.22722817]],
+       
+        [[ 345.28525791, 2817.40735835,   -3.98611513],
+       [ 745.28525791, 2817.40735835,   -3.98611513],
+       [ 745.28525791, 2217.40735835,   -3.98611513],
+       [ 345.28525791, 2217.40735835,   -3.98611513]]]
 
 #force plate mesh
 for force_plate_position in force_plate_positions:
-    print("froce")
+    print("force_plate_positions")
     print(force_plate_position)
     #iterate through array holding all force plate locations and create a mesh for each one
     X_corner_pos = Vector((float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001))
     X_corner_neg = Vector((float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001))
     Neg_x_neg = Vector((float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001))
     pos_x_neg = Vector((float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001))
-
+    
     mesh_f = bpy.data.meshes.new("force_plate" + str(plate_number))  # add the new mesh
     obj_f = bpy.data.objects.new("force_plate_object" + str(plate_number), mesh_f)
     col = bpy.data.collections.get("Collection")
@@ -286,13 +317,14 @@ for force_plate_position in force_plate_positions:
     obj_f.select_set(state=True)
     #Set origin of the plane to its median center
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+    
+
 
     #find plate origin (in the center of the force plate, so the average of all corners)
     a = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
-    b = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
-    c = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
-    d = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
-
+    b = [float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001]
+    c = [float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001]
+    d = [float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001]
 
     plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
     
@@ -301,14 +333,12 @@ for force_plate_position in force_plate_positions:
     bpy.data.objects["Arrow-bottom" + str(plate_number)].location = plate_origin
 
     bpy.context.view_layer.objects.active = obj_f
+    bpy.ops.object.select_all(action='DESELECT')
     obj_f.select_set(state=True)
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
     bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0.00118261, -0.0109036, 0.00548362), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
     #bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(-0.00142037, 1.1027e-05, 0.0276659), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
     bpy.ops.mesh.edge_face_add()
-
-
-
 
     #create arrow mesh
 
@@ -319,11 +349,15 @@ for force_plate_position in force_plate_positions:
     col = bpy.data.collections.get("Collection")
     col.objects.link(obj_arrow)
     bpy.context.view_layer.objects.active = obj_arrow
+    
+    print("arrow top and bottoms")
+    print(bpy.data.objects["Arrow-bottom" + str(plate_number)].location)
+    print(bpy.data.objects["Arrow-top" + str(plate_number)].location)
 
     verts_arrow = [bpy.data.objects["Arrow-bottom" + str(plate_number)].location, bpy.data.objects["Arrow-top" + str(plate_number)].location]
     faces_arrow = []
     edges_arrow =  [(0,1)]
-
+    
 
     #Create the mesh with the vertices and faces
     obj_arrow.data.from_pydata(verts_arrow, edges_arrow, faces_arrow)
@@ -737,7 +771,7 @@ plot_force_array = []
 current_skel_frame = [0]
 bpy.context.scene.render.fps = 1200
 
-                
+#handler function runs on every frame of the animation                
 def my_handler(scene): 
     frames_seen = 0
     #must be in pose mode to set keyframes
@@ -770,28 +804,40 @@ def my_handler(scene):
         
     #update force plate
     for plate_number in range(len(input_force_plate_arr)):
+        print("plate" + str(plate_number))
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
-        print("current_force_arr")
         print(current_force_plate_arr)
+        print("plate_origins")
+        print(plate_origins)
         #Center of pressure from data is the base of the arrow
+        coord_bottom_without_change = Vector(((float(current_force_plate_arr[2][0])), (float(current_force_plate_arr[2][1])), (float(current_force_plate_arr[2][2])* 0.001)))
         coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
         #force from data scaled by a number is the height of arrow 
+        coord_top_without_change = Vector((float(current_force_plate_arr[0][0]), float(current_force_plate_arr[0][1]), float(current_force_plate_arr[0][2])))
+        
         coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
-        if coord_top[2] <= 0:
-            #Do not render the ring in final output
+        
+        if (coord_top[2] <= 0) or (coord_top[2] - coord_bottom[2]) < .5:
+            #Do not render in final output
             obj_arrow.hide_set(True)
             obj_arrow.hide_render = True
-            #cone.hide_set(True)
-            #cone.hide_render = True
+            bpy.data.objects["Cone" + str(plate_number)].hide_set(True)
+            bpy.data.objects["Cone" + str(plate_number)].hide_render = True
+            
         else:
-            #render the ring in final output
+            #render in final output
             bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(False)
             bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = False
-            #cone.hide_set(False)
-            #cone.hide_render = False
-            bpy.data.objects["Arrow-bottom" + str(plate_number)].location = coord_bottom
-            bpy.data.objects["Arrow-top" + str(plate_number)].location = coord_top
-    
+            bpy.data.objects["Cone" + str(plate_number)].hide_set(False)
+            bpy.data.objects["Cone" + str(plate_number)].hide_render = False
+            print(frame)
+            print("plate" + str(plate_number))
+            print("Arrow-bottom " + str(coord_bottom))
+            print("Arrow-top" + str(coord_top))
+            print("coord_bottom_without_change" + str(coord_bottom_without_change))
+            print("coord_top_without_change" + str(coord_top_without_change))
+        bpy.data.objects["Arrow-bottom" + str(plate_number)].location = coord_bottom
+        bpy.data.objects["Arrow-top" + str(plate_number)].location = coord_top
     
 
 #script to create a mesh of the armature 
@@ -1073,38 +1119,41 @@ if outline_mesh_obob.data.materials:
 else:
     # no slots
     outline_mesh_obob.data.materials.append(mat2)
-    
-#Arrow  
-mat3 = bpy.data.materials.get("Arrow_mat")
-if mat3 is None:
-    # create material
-    print("mat was none")
-    mat3 = bpy.data.materials.new(name="Arrow_mat")
-else:
-    print("mat was found")
-# Assign it to object
-if obj_arrow.data.materials:
-    # assign to 1st material slot
-     obj_arrow.data.materials[0] = mat3   
-else:
-    # no slots
-    obj_arrow.data.materials.append(mat3)
 
-#force plate
-mat4 = bpy.data.materials.get("walls")
-if mat4 is None:
-    # create material
-    print("mat was none")
-    mat4 = bpy.data.materials.new(name="walls")
-else:
-    print("mat was found")
-# Assign it to object
-if obj_f.data.materials:
-    # assign to 1st material slot
-     obj_f.data.materials[0] = mat4   
-else:
-    # no slots
-    obj_f.data.materials.append(mat4)
+for arrow_force_num in range(len(input_force_plate_arr)):
+    #Arrow  
+    mat3 = bpy.data.materials.get("Arrow_mat")
+    if mat3 is None:
+        # create material
+        print("mat was none")
+        mat3 = bpy.data.materials.new(name="Arrow_mat")
+    else:
+        print("mat was found")
+    # Assign it to object
+    obj_arrow = bpy.data.objects["obj_arrow" + str(arrow_force_num)]
+    if obj_arrow.data.materials:
+        # assign to 1st material slot
+         obj_arrow.data.materials[0] = mat3   
+    else:
+        # no slots
+        obj_arrow.data.materials.append(mat3)
+
+    #force plate
+    mat4 = bpy.data.materials.get("walls")
+    if mat4 is None:
+        # create material
+        print("mat was none")
+        mat4 = bpy.data.materials.new(name="walls")
+    else:
+        print("mat was found")
+    # Assign it to object
+    obj_f = bpy.data.objects["force_plate_object" + str(arrow_force_num)]
+    if obj_f.data.materials:
+        # assign to 1st material slot
+         obj_f.data.materials[0] = mat4   
+    else:
+        # no slots
+        obj_f.data.materials.append(mat4)
 
 print("assigned materials")
 
@@ -1141,7 +1190,6 @@ camera.rotation_quaternion[1] = 20
 camera.rotation_quaternion[2] = -20
 camera.rotation_quaternion[3] = 0
 '''
-
 #--------------------------------------------------------------------
 #append handler function
                 
@@ -1175,23 +1223,4 @@ for frame in range(0, 1):
     scene.frame_set(frame)
     #render frame
     bpy.ops.render.render(write_still=True)
-    '''
-    #add information for each frame to XML file
-    child0 = SubElement(frames, 'frame' + str(frame))
-    child1 = SubElement(child0, 'markers')
-    child2 = SubElement(child0, 'armature')
-    current_marker = 0
-    #Log XML for each marker from original npy data
-    for col in markers_list:
-        coord = Vector((float(col[0]), float(col[1]), float(col[2])))
-        empty = order_of_markers[current_marker] 
-        marker_node = SubElement(child1, empty.name)
-        create_node(marker_node, "Location", str(coord))
-        current_marker += 1
-    #Log XML for each bone's location and rotation
-    for bone in bpy.data.objects['Armature'].pose.bones:
-        bone_node = SubElement(child2, bone.name)
-        create_node(bone_node, "Location", str(bone.location))
-        create_node(bone_node, "Rotation", str(bone.rotation_quaternion))
-        '''
 print("finished!")
