@@ -336,12 +336,10 @@ for force_plate_position in force_plate_positions:
     bpy.ops.object.select_all(action='DESELECT')
     obj_f.select_set(state=True)
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-    bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0.00118261, -0.0109036, 0.00548362), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
-    #bpy.ops.mesh.extrude_edges_move(MESH_OT_extrude_edges_indiv={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(-0.00142037, 1.1027e-05, 0.0276659), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
     bpy.ops.mesh.edge_face_add()
-
+    plate_number += 1
     #create arrow mesh
-
+'''
     #create a mesh of armature
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
     mesh_arrow = bpy.data.meshes.new("mesh_arrow" + str(plate_number))  # add the new mesh
@@ -393,9 +391,7 @@ for force_plate_position in force_plate_positions:
         bpy.context.object.modifiers["Hook"].name = hook_name
         bpy.context.object.modifiers[hook_name].object = order_of_arrow[x]
         bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
-        
-    plate_number += 1
-
+     '''   
 #--------------------------------------------------------------
 #Virtual Markers!
 
@@ -414,6 +410,9 @@ for force_plate_position in force_plate_positions:
 
 #Create marker methods for each different type of relationship:
 #Create virtual markers takes in a string name and a list of marker s that influence it and weights
+
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
 def create_marker_weight(name, markers, weighted):
     center = Vector((0, 0, 0))
     weight_iter = 0
@@ -819,15 +818,19 @@ def my_handler(scene):
         
         if (coord_top[2] <= 0) or (coord_top[2] - coord_bottom[2]) < .5:
             #Do not render in final output
-            obj_arrow.hide_set(True)
-            obj_arrow.hide_render = True
+            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(True)
+            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = True
+            bpy.data.objects["Cylinder" + str(plate_number)].hide_set(True)
+            bpy.data.objects["Cylinder" + str(plate_number)].hide_render = True
             bpy.data.objects["Cone" + str(plate_number)].hide_set(True)
             bpy.data.objects["Cone" + str(plate_number)].hide_render = True
             
         else:
             #render in final output
-            bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(False)
-            bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = False
+            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(False)
+            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = False
+            bpy.data.objects["Cylinder" + str(plate_number)].hide_set(False)
+            bpy.data.objects["Cylinder" + str(plate_number)].hide_render = False
             bpy.data.objects["Cone" + str(plate_number)].hide_set(False)
             bpy.data.objects["Cone" + str(plate_number)].hide_render = False
             print(frame)
@@ -1130,6 +1133,7 @@ for arrow_force_num in range(len(input_force_plate_arr)):
     else:
         print("mat was found")
     # Assign it to object
+    '''
     obj_arrow = bpy.data.objects["obj_arrow" + str(arrow_force_num)]
     if obj_arrow.data.materials:
         # assign to 1st material slot
@@ -1137,7 +1141,7 @@ for arrow_force_num in range(len(input_force_plate_arr)):
     else:
         # no slots
         obj_arrow.data.materials.append(mat3)
-
+'''
     #force plate
     mat4 = bpy.data.materials.get("walls")
     if mat4 is None:
