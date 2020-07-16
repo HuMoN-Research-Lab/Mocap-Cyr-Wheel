@@ -2,17 +2,23 @@ import numpy as np, bpy, csv
 from mathutils import Matrix, Vector, Euler
 from math import *
 import time
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, tostring, SubElement, Comment
+from datetime import datetime
+import xml.dom.minidom
 
 #Start frame of data
 frame_start = 19655
 
 #Start frame of data
-frame_end = frame_start + 1
+frame_end = 6000
+
 
 #default number of frames to output is all of them - change this value to an integer if you 
 #want to output less 
 #set to "all" to output all frames
 num_frames_output = "all"
+num_frames_output = 1
 #Change: the path of the tsv file 
 input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate0007.tsv"
 #input force plate data
@@ -55,7 +61,6 @@ force_plate_arr = []
 force_plate_positions = []
 
 for x in range(len(input_force_plate_arr)):
-    print("x" + str(x))
     with open(input_force_plate_arr[x], "r") as tsv_file:
         force_file_temp = list(csv.reader(tsv_file, delimiter='\t'))
         force_plate_positions.append([[force_file_temp[9][1],force_file_temp[10][1], force_file_temp[11][1]], [force_file_temp[12][1], force_file_temp[13][1], force_file_temp[14][1]],
@@ -91,7 +96,7 @@ with open(input_tsv, "r") as tsv_file:
     #the data from the starting frame
     frame = frame_start
     arr = create_data_arr(frame)
-            
+        
 #-----------------------------------------------------------------------------------
 #Create an array of marker names 
 #column 9 of tsv file holds all marker names
@@ -125,7 +130,27 @@ for col in arr:
     mt.empty_display_size = 0.1
     #add empty to array order_of_markers so we can later access it 
     order_of_markers.append(mt)
+
+#-----------------------------------------------------------------------------------
+# Log info to XML file
+# create the file structure
+data = Element('Data')
+
+# current date and time
+now = datetime.now()
+timestamp = datetime.timestamp(now)
+dt_object = datetime.fromtimestamp(timestamp)
+date = SubElement(data, "timestamp")
+date.text = str(dt_object)
+
+frames = SubElement(data, 'frames')
+
+def create_node(parent, name, text):
+    child1 = SubElement(parent, name)
+    child1.text = text
     
+    
+#-----------------------------------------------------------------------------------
 #Create armature object
 armature = bpy.data.armatures.new('Armature')
 armature_object = bpy.data.objects.new('Armature', armature)
@@ -258,8 +283,6 @@ outline_mesh_obob = obj
 
 plate_number = 0
 
-print(force_plate_positions)
-
 #array of each plate's origin(center)
 plate_origins = []
 
@@ -291,8 +314,6 @@ force_plate_positions =  [[[ 349.09483744, 1310.58521453,   -2.58046351],
 
 #force plate mesh
 for force_plate_position in force_plate_positions:
-    print("force_plate_positions")
-    print(force_plate_position)
     #iterate through array holding all force plate locations and create a mesh for each one
     X_corner_pos = Vector((float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001))
     X_corner_neg = Vector((float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001))
@@ -308,8 +329,6 @@ for force_plate_position in force_plate_positions:
     verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
     edges_f =  [(0,1),(1,2),(2,3),(3,0)]
     
-    print(verts_f)
-
     #Create the mesh with the vertices and faces
     obj_f.data.from_pydata(verts_f, edges_f, [])
     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
@@ -803,11 +822,7 @@ def my_handler(scene):
         
     #update force plate
     for plate_number in range(len(input_force_plate_arr)):
-        print("plate" + str(plate_number))
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
-        print(current_force_plate_arr)
-        print("plate_origins")
-        print(plate_origins)
         #Center of pressure from data is the base of the arrow
         coord_bottom_without_change = Vector(((float(current_force_plate_arr[2][0])), (float(current_force_plate_arr[2][1])), (float(current_force_plate_arr[2][2])* 0.001)))
         coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
@@ -833,12 +848,6 @@ def my_handler(scene):
             bpy.data.objects["Cylinder" + str(plate_number)].hide_render = False
             bpy.data.objects["Cone" + str(plate_number)].hide_set(False)
             bpy.data.objects["Cone" + str(plate_number)].hide_render = False
-            print(frame)
-            print("plate" + str(plate_number))
-            print("Arrow-bottom " + str(coord_bottom))
-            print("Arrow-top" + str(coord_top))
-            print("coord_bottom_without_change" + str(coord_bottom_without_change))
-            print("coord_top_without_change" + str(coord_top_without_change))
         bpy.data.objects["Arrow-bottom" + str(plate_number)].location = coord_bottom
         bpy.data.objects["Arrow-top" + str(plate_number)].location = coord_top
     
@@ -1220,11 +1229,72 @@ armature_data.select_set(state=True)
 print("Saving frames...")
 scene = bpy.context.scene
 #set the number of frames to output 
+if num_frames_output is "all":
+    num_frames_output = scene.frame_end + 1
+else: 
+    num_frames_output += 1
 #iterate through all frames
-for frame in range(0, 1):
+for frame in range(scene.frame_start, num_frames_output):
+    print(frame)
     #specify file path to the folder you want to export to
-    scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
+    #scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
     scene.frame_set(frame)
     #render frame
-    bpy.ops.render.render(write_still=True)
+    #bpy.ops.render.render(write_still=True)
+    #add information for each frame to XML file
+    child0 = SubElement(frames, 'frame' + str(frame))
+    child1 = SubElement(child0, 'markers')
+    child11 = SubElement(child0, 'skeleton_virtual_markers')
+    child2 = SubElement(child0, 'armature')
+    child3 = SubElement(child0, 'force_plates')
+    current_marker = 0
+    #Log XML for each marker from original npy data
+    for col in arr:
+        coord = [float(col[0]), float(col[1]), float(col[2])]
+        empty = order_of_markers[current_marker] 
+        marker_node = SubElement(child1, empty.name)
+        create_node(marker_node, "Location", str(coord))
+        current_marker += 1
+    #Log XML for each virtual marker's location
+    for index in range(len(virtual_markers)):
+        marker_v_node = SubElement(child11, str(virtual_markers[index].name))
+        create_node(marker_v_node, "Location", str(virtual_markers[index].location[0]) + "," + str(virtual_markers[index].location[1]) + "," + str(virtual_markers[index].location[2]))
+        
+    #Log XML for each bone's location and rotation
+    for bone in bpy.data.objects['Armature'].pose.bones:
+        bone_node = SubElement(child2, bone.name)
+        create_node(bone_node, "Location", str(bone.location[0]) + "," + str(bone.location[1]) + "," + str(bone.location[2]))
+        create_node(bone_node, "Rotation_Quaternion", str(bone.rotation_quaternion[0]) + "," + str(bone.rotation_quaternion[1]) + "," + str(bone.rotation_quaternion[2]) + "," + str(bone.rotation_quaternion[3]))
+        create_node(bone_node, "Rotation_Euler", str(bone.rotation_euler[0]) + "," + str(bone.rotation_euler[1]) + "," + str(bone.rotation_euler[2]) )
+        create_node(bone_node, "Rotation_Axis_XYZ", str(bone.rotation_axis_angle[0]) + "," + str(bone.rotation_axis_angle[1]) + "," + str(bone.rotation_axis_angle[2]) + "," + str(bone.rotation_axis_angle[3]))
+    #Log XML for each plate's force
+    for plate_number in range(len(input_force_plate_arr)):
+        plate_node = SubElement(child3, "plate_" + str(plate_number))
+        current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
+        create_node(plate_node, "COP", str(current_force_plate_arr[2]))
+        create_node(plate_node, "Force", str(current_force_plate_arr[0]))
+        
+    #Log XML for wheel
+    
+        
+        
+
+
+        
+#-----------------------------------------------------------------------------------
+# Write and close XML file
+print("Writing XML...")
+#raw XML file
+mydata = ET.tostring(data, encoding="unicode")
+myfile = open(output_frames_folder + "/output_data_raw.xml", "w")
+myfile.write(mydata)
+myfile.close() 
+
+#formatted human-readable XML file
+dom = xml.dom.minidom.parseString(mydata)
+pretty_xml_as_string = dom.toprettyxml()
+myfile2 = open(output_frames_folder + "/output_data_pretty.xml", "w")
+myfile2.write(pretty_xml_as_string)
+myfile2.close()
+
 print("finished!")
