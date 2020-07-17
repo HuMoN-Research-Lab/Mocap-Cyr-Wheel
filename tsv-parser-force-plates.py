@@ -149,6 +149,16 @@ def create_node(parent, name, text):
     child1 = SubElement(parent, name)
     child1.text = text
     
+#Create arrays to hold XML data for bones and wheel on each frame
+data_array_bones_position = []
+data_array_bones_rotation_q = []
+data_array_bones_rotation_e = []
+data_array_bones_rotation_xyz = []
+
+data_array_wheel_position = []
+data_array_wheel_rotation_q = []
+data_array_wheel_rotation_e = []
+data_array_wheel_rotation_xyz = []
     
 #-----------------------------------------------------------------------------------
 #Create armature object
@@ -702,7 +712,6 @@ def get_armature():
 armature = get_armature()
 
 
-
 #Define how Skeleton bones connect to one another
 list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
 ('bone1', virtual_markers[1], virtual_markers[2]), #v_L_Wrist to v_L_Hand
@@ -819,7 +828,35 @@ def my_handler(scene):
         current_marker += 1 
     for index in range(len(virtual_markers)):
         update_virtual_marker(index)
+    
+    frame_bone_arr_pos = []
+    frame_bone_arr_rotq = []
+    frame_bone_arr_rote = []
+    frame_bone_arr_rotxyz = []
+    #Add info to special XML data arrays for bones and wheel
+    for bone in bpy.data.objects['Armature'].pose.bones:
+        o = bpy.data.objects['Armature']       # Our armature object
+        #global location method found here:https://blender.stackexchange.com/questions/35982/how-to-get-posebone-global-location
+        global_location = o.matrix_world @ bone.matrix @ bone.location
+        global_matrix = o.matrix_world @ bone.matrix
+        frame_bone_arr_pos.append(global_location)
+        frame_bone_arr_rotq.append(global_matrix.decompose()[1])
+        frame_bone_arr_rote.append(global_matrix.decompose()[1].to_euler())
+    
+    data_array_bones_position.append(frame_bone_arr_pos)
+    data_array_bones_rotation_q.append(frame_bone_arr_rotq)
+    data_array_bones_rotation_e.append(frame_bone_arr_rote)
+    data_array_bones_rotation_xyz.append(frame_bone_arr_rotxyz)
         
+    #Wheel location and rotation
+    ring = find_torus()
+    global_location = ring.matrix_world[0]
+    data_array_wheel_position.append(global_location)
+    data_array_wheel_rotation_q.append(ring.matrix_world.decompose()[1])
+    print("ring_matrix")
+    print(data_array_wheel_rotation_q)
+    data_array_wheel_rotation_e.append(ring.matrix_world.decompose()[1].to_euler())     
+    print(data_array_wheel_rotation_e) 
     #update force plate
     for plate_number in range(len(input_force_plate_arr)):
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
@@ -833,8 +870,6 @@ def my_handler(scene):
         
         if (coord_top[2] <= 0) or (coord_top[2] - coord_bottom[2]) < .5:
             #Do not render in final output
-            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(True)
-            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = True
             bpy.data.objects["Cylinder" + str(plate_number)].hide_set(True)
             bpy.data.objects["Cylinder" + str(plate_number)].hide_render = True
             bpy.data.objects["Cone" + str(plate_number)].hide_set(True)
@@ -842,8 +877,6 @@ def my_handler(scene):
             
         else:
             #render in final output
-            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_set(False)
-            #bpy.data.objects["obj_arrow" + str(plate_number)].hide_render = False
             bpy.data.objects["Cylinder" + str(plate_number)].hide_set(False)
             bpy.data.objects["Cylinder" + str(plate_number)].hide_render = False
             bpy.data.objects["Cone" + str(plate_number)].hide_set(False)
@@ -1084,9 +1117,11 @@ bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
 
 
 #Find torus object in starter file 
-for obj in bpy.context.scene.objects:
-    if obj.name.startswith("Torus"):
-        ring = obj
+def find_torus():
+    for obj in bpy.context.scene.objects:
+        if obj.name.startswith("Torus"):
+            return obj
+ring = find_torus()
         
 ### parent the torus ring mesh object to the animated plane 
 ring.parent = ring_obj
@@ -1247,39 +1282,43 @@ for frame in range(scene.frame_start, num_frames_output):
     child11 = SubElement(child0, 'skeleton_virtual_markers')
     child2 = SubElement(child0, 'armature')
     child3 = SubElement(child0, 'force_plates')
+    child4 = SubElement(child0, 'wheel')
     current_marker = 0
     #Log XML for each marker from original npy data
     for col in arr:
         coord = [float(col[0]), float(col[1]), float(col[2])]
         empty = order_of_markers[current_marker] 
         marker_node = SubElement(child1, empty.name)
-        create_node(marker_node, "Location", str(coord))
+        create_node(marker_node, "Location", str(coord[0]) + "," + str(coord[1]) + "," + str(coord[2]))
         current_marker += 1
     #Log XML for each virtual marker's location
     for index in range(len(virtual_markers)):
         marker_v_node = SubElement(child11, str(virtual_markers[index].name))
         create_node(marker_v_node, "Location", str(virtual_markers[index].location[0]) + "," + str(virtual_markers[index].location[1]) + "," + str(virtual_markers[index].location[2]))
         
+        
+        print(data_array_bones_position)
     #Log XML for each bone's location and rotation
-    for bone in bpy.data.objects['Armature'].pose.bones:
-        bone_node = SubElement(child2, bone.name)
-        create_node(bone_node, "Location", str(bone.location[0]) + "," + str(bone.location[1]) + "," + str(bone.location[2]))
-        create_node(bone_node, "Rotation_Quaternion", str(bone.rotation_quaternion[0]) + "," + str(bone.rotation_quaternion[1]) + "," + str(bone.rotation_quaternion[2]) + "," + str(bone.rotation_quaternion[3]))
-        create_node(bone_node, "Rotation_Euler", str(bone.rotation_euler[0]) + "," + str(bone.rotation_euler[1]) + "," + str(bone.rotation_euler[2]) )
-        create_node(bone_node, "Rotation_Axis_XYZ", str(bone.rotation_axis_angle[0]) + "," + str(bone.rotation_axis_angle[1]) + "," + str(bone.rotation_axis_angle[2]) + "," + str(bone.rotation_axis_angle[3]))
+    for index in range(len(bpy.data.objects['Armature'].pose.bones)):
+        bone_node = SubElement(child2, name_arr[index])
+        
+        create_node(bone_node, "Location", str(data_array_bones_position[frame - 1][index][0]) + "," + str(data_array_bones_position[frame - 1][index][1]) + "," + str(data_array_bones_position[frame - 1][index][2]))
+        create_node(bone_node, "Rotation_Quaternion", str(data_array_bones_rotation_q[frame - 1][index][0]) + "," + str(data_array_bones_rotation_q[frame - 1][index][1]) + "," + str(data_array_bones_rotation_q[frame - 1][index][2]) + "," + str(data_array_bones_rotation_q[frame - 1][index][3]))
+        create_node(bone_node, "Rotation_Euler", str(data_array_bones_rotation_e[frame - 1][index][0]) + "," + str(data_array_bones_rotation_e[frame - 1][index][1]) + "," + str(data_array_bones_rotation_e[frame - 1][index][2]) )
     #Log XML for each plate's force
     for plate_number in range(len(input_force_plate_arr)):
         plate_node = SubElement(child3, "plate_" + str(plate_number))
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
-        create_node(plate_node, "COP", str(current_force_plate_arr[2]))
-        create_node(plate_node, "Force", str(current_force_plate_arr[0]))
-        
-    #Log XML for wheel
+        create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
+        create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
     
-        
-        
-
-
+    print("wheel")
+    print(data_array_wheel_rotation_e)
+    #Log XML for wheel
+    wheel_node = SubElement(child4, "wheel")
+    create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
+    create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
+    create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
         
 #-----------------------------------------------------------------------------------
 # Write and close XML file
