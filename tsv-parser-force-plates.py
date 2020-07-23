@@ -25,11 +25,18 @@ input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Wheel
 header_end = 11
 #input force plate data
 input_force_plate_arr = []
-input_force_plate_arr.append("/../input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
+input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
 input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_2.tsv")
 input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_3.tsv")
 input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_4.tsv")
 input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_5.tsv")
+
+input_force_plate_arr2 = []
+input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_0.npy"))
+input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_1.npy"))
+input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_2.npy"))
+input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_3.npy"))
+input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_4.npy"))
 #when the header ends and data begins
 header_end_force = 27
 #Change: the path of the folder you want to export xml file and png frames of animation to
@@ -42,6 +49,7 @@ output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
 
 #read force plate data 
 #open file (adjust file location)
+
 def create_data_arr_force_plate(frame, plate_id):
     current_row = force_file[plate_id][frame + header_end_force]
     cols, rows = (3, 3)
@@ -73,6 +81,7 @@ for x in range(len(input_force_plate_arr)):
         frame = frame_start
         force_plate_arr_temp =  create_data_arr_force_plate(frame, x)
         force_plate_arr.append(force_plate_arr_temp)
+
         
 arrow_bodies = []
     
@@ -738,10 +747,10 @@ bpy.context.object.show_in_front = False
 num_frames = len(file) - 11
 
 bpy.context.scene.frame_start = 1
-bpy.context.scene.frame_end = num_frames * 400
+bpy.context.scene.frame_end = num_frames 
 plot_force_array = []
 current_skel_frame = [0]
-bpy.context.scene.render.fps = 1200
+bpy.context.scene.render.fps = 300
 
 #handler function runs on every frame of the animation                
 def my_handler(scene): 
@@ -753,10 +762,9 @@ def my_handler(scene):
     #find the current frame number
     frame = scene.frame_current
     current_frame_skeleton_data = current_skel_frame[0]
-    if (frame - 1) % 4 == 0:
-        current_skel_frame[0] = int((frame - 1) / 4)
-        #get the list of marker points from the current frame
-        #markers_list = create_data_arr((frame - 1) / 400)
+    current_skel_frame[0] = frame - 1
+    #get the list of marker points from the current frame
+    #markers_list = create_data_arr((frame - 1) / 400)
     markers_list = create_data_arr(current_skel_frame[0])
         #current virtual marker 
     current_virtual_marker = 0
@@ -794,20 +802,21 @@ def my_handler(scene):
     data_array_bones_rotation_xyz.append(frame_bone_arr_rotxyz)
         
     #Wheel location and rotation
+    '''
     ring = find_torus()
     global_location = ring.matrix_world[0]
     data_array_wheel_position.append(global_location)
     data_array_wheel_rotation_q.append(ring.matrix_world.decompose()[1])
     data_array_wheel_rotation_e.append(ring.matrix_world.decompose()[1].to_euler())     
+    '''
     #update force plate
     for plate_number in range(len(input_force_plate_arr)):
-        current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
+        #get every 4th sample of force plate data to match framerate of the rest of the data
+        current_force_plate_arr = input_force_plate_arr2[plate_number][(frame - 1)]
+        print(current_force_plate_arr)
         #Center of pressure from data is the base of the arrow
-        coord_bottom_without_change = Vector(((float(current_force_plate_arr[2][0])), (float(current_force_plate_arr[2][1])), (float(current_force_plate_arr[2][2])* 0.001)))
         coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
         #force from data scaled by a number is the height of arrow 
-        coord_top_without_change = Vector((float(current_force_plate_arr[0][0]), float(current_force_plate_arr[0][1]), float(current_force_plate_arr[0][2])))
-        
         coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
         
         if (coord_top[2] <= 0) or (coord_top[2] - coord_bottom[2]) < .5:
@@ -1234,13 +1243,13 @@ for frame in range(scene.frame_start, num_frames_output):
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
         create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
         create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
-    
+    '''
     #Log XML for wheel
     wheel_node = SubElement(child4, "wheel")
     create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
     create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
     create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
-        
+       ''' 
 #-----------------------------------------------------------------------------------
 # Write and close XML file
 print("Writing XML...")

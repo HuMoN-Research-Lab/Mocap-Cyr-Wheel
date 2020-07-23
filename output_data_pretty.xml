@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <Data>
-	<timestamp>2020-07-17 11:56:01.944114</timestamp>
+	<timestamp>2020-07-23 11:48:10.433751</timestamp>
 	<frames>
 		<frame1>
 			<markers>
@@ -375,13 +375,7 @@
 					<Force>-2.447021,-3.292358,-11.917969</Force>
 				</plate_4>
 			</force_plates>
-			<wheel>
-				<wheel>
-					<Location>-0.38718873262405396,0.7192474007606506,-0.5768574476242065</Location>
-					<Rotation_Quaternion>0.6216801404953003,-0.4061873257160187,0.6686803102493286,0.03731418401002884</Rotation_Quaternion>
-					<Rotation_Euler>-2.028583526611328,1.0386570692062378,-1.3664745092391968</Rotation_Euler>
-				</wheel>
-			</wheel>
+			<wheel/>
 		</frame1>
 	</frames>
 </Data>
