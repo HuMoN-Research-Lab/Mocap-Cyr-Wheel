@@ -18,7 +18,7 @@ frame_end = 6000
 #want to output less 
 #set to "all" to output all frames
 num_frames_output = "all"
-num_frames_output = 1
+#num_frames_output = 1
 #Change: the path of the tsv file 
 input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate0007.tsv"
 #when the header ends and data begins
@@ -748,6 +748,8 @@ num_frames = len(file) - 11
 
 bpy.context.scene.frame_start = 1
 bpy.context.scene.frame_end = num_frames 
+print("num-frames")
+print(num_frames)
 plot_force_array = []
 current_skel_frame = [0]
 bpy.context.scene.render.fps = 300
@@ -812,14 +814,14 @@ def my_handler(scene):
     #update force plate
     for plate_number in range(len(input_force_plate_arr)):
         #get every 4th sample of force plate data to match framerate of the rest of the data
-        current_force_plate_arr = input_force_plate_arr2[plate_number][(frame - 1)]
-        print(current_force_plate_arr)
+        current_force_plate_arr = input_force_plate_arr2[plate_number][(frame * 4)]
         #Center of pressure from data is the base of the arrow
         coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
         #force from data scaled by a number is the height of arrow 
         coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
         
-        if (coord_top[2] <= 0) or (coord_top[2] - coord_bottom[2]) < .5:
+        if (coord_top[2] <= 0):
+            print(coord_top[2])
             #Do not render these objects in final output 
             bpy.data.objects["Cylinder" + str(plate_number)].hide_set(True)
             bpy.data.objects["Cylinder" + str(plate_number)].hide_render = True
@@ -1205,10 +1207,11 @@ else:
 for frame in range(scene.frame_start, num_frames_output):
     print(frame)
     #specify file path to the folder you want to export to
-    #scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
+    scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
     scene.frame_set(frame)
     #render frame
-    #bpy.ops.render.render(write_still=True)
+    bpy.ops.render.render(write_still=True)
+    '''
     #add information for each frame to XML file
     child0 = SubElement(frames, 'frame' + str(frame))
     child1 = SubElement(child0, 'markers')
@@ -1243,13 +1246,13 @@ for frame in range(scene.frame_start, num_frames_output):
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
         create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
         create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
-    '''
+
     #Log XML for wheel
     wheel_node = SubElement(child4, "wheel")
     create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
     create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
     create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
-       ''' 
+
 #-----------------------------------------------------------------------------------
 # Write and close XML file
 print("Writing XML...")
@@ -1267,3 +1270,4 @@ myfile2.write(pretty_xml_as_string)
 myfile2.close()
 
 print("finished!")
+'''

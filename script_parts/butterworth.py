@@ -16,8 +16,6 @@ markers = ['*', 'o']
 
 
 w = float(cutoff/ (framerate/2.0))
-print("w")
-print(w)
 header_start = 27
 
 input_force_plate_arr = []
@@ -56,7 +54,7 @@ for x in range(len(input_force_plate_arr)):
         new_temp_row = []
         new_temp_full = []
         for n in range(len(force_file_temp)):
-            if n >= 27 and n < 108:
+            if n >= 27:
                 counter = 0
                 temp_arr = []
                 for m in range(len(force_file_temp[n])):
