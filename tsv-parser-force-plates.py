@@ -8,48 +8,45 @@ from datetime import datetime
 import xml.dom.minidom
 
 #Start frame of data
-frame_start = 19655
+frame_start = 1
 
-#Start frame of data
-frame_end = 6000
-
+#End frame of data
+#set to "all" if you wish to render until the last frame
+frame_end = 2
 
 #default number of frames to output is all of them - change this value to an integer if you 
 #want to output less 
-#set to "all" to output all frames
-num_frames_output = "all"
-#num_frames_output = 1
-#Change: the path of the tsv file 
-input_tsv = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate0007.tsv"
-#when the header ends and data begins
+#directory on computer 
+directory = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/"
+#the path of the tsv file 
+input_tsv = directory + r"input_tsv_files/WheelForcePlate0007.tsv"
+#when the header ends of the skeleton animation tsv and data begins
 header_end = 11
+#the row number where 0 is the first that holds the marker names
+marker_names_row = 9
 #input force plate data
 input_force_plate_arr = []
-input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
-input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_2.tsv")
-input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_3.tsv")
-input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_4.tsv")
-input_force_plate_arr.append("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_5.tsv")
+input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
+input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_2.tsv")
+input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_3.tsv")
+input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_4.tsv")
+input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_5.tsv")
 
+#the new filtered force plate data 
 input_force_plate_arr2 = []
-input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_0.npy"))
-input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_1.npy"))
-input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_2.npy"))
-input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_3.npy"))
-input_force_plate_arr2.append(np.load("/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Force_Plate_Data/FiltFP_4.npy"))
-#when the header ends and data begins
+input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_0.npy"))
+input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_1.npy"))
+input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_2.npy"))
+input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_3.npy"))
+input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_4.npy"))
+#when the header ends of the force plate tsv and data begins
 header_end_force = 27
 #Change: the path of the folder you want to export xml file and png frames of animation to
-output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
+output_frames_folder = directory 
 
 
 #script to read tsv files in blender
-
-#make variables 
-
-#read force plate data 
-#open file (adjust file location)
-
+#read force plate data and return an array containing all force plate data for given frame
 def create_data_arr_force_plate(frame, plate_id):
     current_row = force_file[plate_id][frame + header_end_force]
     cols, rows = (3, 3)
@@ -71,6 +68,7 @@ force_plate_arr = []
 #array holding arrays of each force plate's X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg
 force_plate_positions = []
 
+#Open and read force plate data
 for x in range(len(input_force_plate_arr)):
     with open(input_force_plate_arr[x], "r") as tsv_file:
         force_file_temp = list(csv.reader(tsv_file, delimiter='\t'))
@@ -81,12 +79,9 @@ for x in range(len(input_force_plate_arr)):
         frame = frame_start
         force_plate_arr_temp =  create_data_arr_force_plate(frame, x)
         force_plate_arr.append(force_plate_arr_temp)
-
-        
-arrow_bodies = []
     
 # Create 2D array "arr" to hold all 3D coordinate info of markers
-#numerical data begins in column 11
+#return an array containing all marker locations at given frame
 def create_data_arr(frame):
     current_row = file[frame + header_end]
     cols, rows = (3, int((len(current_row) - 2) / 3))
@@ -102,7 +97,7 @@ def create_data_arr(frame):
     return arr;
  
 #-----------------------------------------------------------------------------------
-#open file (adjust file location)
+#open file and read marker animation data
 with open(input_tsv, "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
     #the data from the starting frame
@@ -111,8 +106,7 @@ with open(input_tsv, "r") as tsv_file:
         
 #-----------------------------------------------------------------------------------
 #Create an array of marker names 
-#column 9 of tsv file holds all marker names
-current_row = file[9] 
+current_row = file[marker_names_row] 
 name_arr = []
 for index in range(1, len(current_row)):
     name_arr.append(current_row[index])
@@ -120,8 +114,9 @@ for index in range(1, len(current_row)):
 #-----------------------------------------------------------------------------------
 #Create empties at marker positions    
 name = 0
+#an array to hold all marker objects
 order_of_markers = []
-# make sure project unity is correct for imported data
+# make sure project unit is correct for imported data
 bpy.context.scene.unit_settings.length_unit = 'METERS'
 #iterate through arr and create an empty object at that location for each element
 for col in arr:
@@ -157,6 +152,7 @@ date.text = str(dt_object)
 
 frames = SubElement(data, 'frames')
 
+#helper function to create subelements 
 def create_node(parent, name, text):
     child1 = SubElement(parent, name)
     child1.text = text
@@ -165,7 +161,6 @@ def create_node(parent, name, text):
 data_array_bones_position = []
 data_array_bones_rotation_q = []
 data_array_bones_rotation_e = []
-data_array_bones_rotation_xyz = []
     
 #-----------------------------------------------------------------------------------
 #Create armature object
@@ -185,10 +180,13 @@ bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 mesh = bpy.data.meshes.new("outline_skeleton_mesh")  # add the new mesh
 obj = bpy.data.objects.new("outline_skeleton_object", mesh)
 col = bpy.data.collections.get("Collection")
+#link to Collection
 col.objects.link(obj)
+#set as active object
 bpy.context.view_layer.objects.active = obj
 
-#list of all markers in order of array order_of_markers
+#list of all markers in order of array order_of_markers to keep track of their index in the array
+'''
 arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
     '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
     '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
@@ -204,7 +202,7 @@ arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2
     '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
     '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
     '46Steve_CyrWheel05']
-
+'''
 #--------------------------------------------------------------------------
 #Create mesh outline of skeleton parts
  # verts made with XYZ coords
@@ -293,16 +291,16 @@ def add_vertex_group_hooks():
         bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
 
 add_vertex_group_hooks()
-
+#keep track of mesh object
 outline_mesh_obob = obj
 
-
-
+#the first force plate
 plate_number = 0
 
 #array of each plate's origin(center)
 plate_origins = []
 
+#Later on: import this from file
 #positions of force plates on ground
 force_plate_positions =  [[[ 349.09483744, 1310.58521453,   -2.58046351],
        [ 749.09483744, 1310.58521453,   -2.58046351],
@@ -342,8 +340,10 @@ for force_plate_position in force_plate_positions:
     col = bpy.data.collections.get("Collection")
     col.objects.link(obj_f)
     bpy.context.view_layer.objects.active = obj_f
-
+    
+    #vertices
     verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
+    #edges between indexed vertices
     edges_f =  [(0,1),(1,2),(2,3),(3,0)]
     
     #Create the mesh with the vertices and faces
@@ -372,7 +372,9 @@ for force_plate_position in force_plate_positions:
     bpy.ops.object.select_all(action='DESELECT')
     obj_f.select_set(state=True)
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    #Add face between edges to render force plate with a color
     bpy.ops.mesh.edge_face_add()
+    #increment the number force plate we are working with
     plate_number += 1
 
 #--------------------------------------------------------------
@@ -396,6 +398,7 @@ for force_plate_position in force_plate_positions:
 
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
+#Create virtual marker where parameters are the name of the marker, the markers that affect its position, and each of their weights.
 def create_marker_weight(name, markers, weighted):
     center = Vector((0, 0, 0))
     weight_iter = 0
@@ -403,19 +406,6 @@ def create_marker_weight(name, markers, weighted):
         center += x.location*weighted[weight_iter]
         weight_iter += 1
     coord = Vector((float(center[0]), float(center[1]), float(center[2])))
-    bpy.ops.object.add(type='EMPTY', location=coord)
-    mt = bpy.context.active_object  
-    mt.name = name
-    bpy.context.scene.collection.objects.link( mt )
-    mt.location = coord
-    mt.empty_display_size = 0.2
-    virtual_markers.append(mt)
-    
-#Create virtual markers takes in a string name 
-#surrounding_markers [a, b, c] take a.x, b.y, and c.z locations
-#z is up, x is forward, y is side
-def create_marker_xyz(name, list):
-    coord = Vector((list[0].location[0], list[1].location[1], list[2].location[2]))
     bpy.ops.object.add(type='EMPTY', location=coord)
     mt = bpy.context.active_object  
     mt.name = name
@@ -438,7 +428,7 @@ def create_marker_offset(name, markers, weighted):
     mt.empty_display_size = 0.2
     virtual_markers.append(mt)
 
-
+#Keeping track of virtual marker info using arrays, where each marker is an index in each array
 v_relationship = []
 virtual_markers = []
 surrounding_markers = []
@@ -453,8 +443,6 @@ def update_virtual_data(relationship, surrounding, vweights, vname):
     v_names.append(vname)
     if(relationship is "weight"):
         create_marker_weight(vname, surrounding, vweights)
-    elif(relationship is "xyz"):
-        create_marker_xyz(vname, surrounding)
     else:
         create_marker_offset(vname, surrounding, vweights)
         
@@ -613,11 +601,6 @@ def update_virtual_marker(index):
             center += x.location*weights[index][weight_iter]
             weight_iter += 1
         coord = Vector((float(center[0]), float(center[1]), float(center[2])))
-    elif(v_relationship[index] is "xyz"):
-        x = surrounding_markers[index][0].location[0]
-        y = surrounding_markers[index][1].location[1]
-        z = surrounding_markers[index][2].location[2]
-        coord = Vector((x, y, z))
     else: #relationship is "offset"
         center = surrounding_markers[index][0].location
         for n in range(len(weights[index])):
@@ -744,14 +727,13 @@ bpy.context.object.show_in_front = False
 #find number of frames in animation
 
 #find number of frames in file
-num_frames = len(file) - 11
+num_frames = len(file) - header_end
 
 bpy.context.scene.frame_start = 1
 bpy.context.scene.frame_end = num_frames 
-print("num-frames")
-print(num_frames)
 plot_force_array = []
 current_skel_frame = [0]
+#Set FPS: fps of qualisys motion caption data is 300.
 bpy.context.scene.render.fps = 300
 
 #handler function runs on every frame of the animation                
@@ -1199,19 +1181,19 @@ armature_data.select_set(state=True)
 print("Saving frames...")
 scene = bpy.context.scene
 #set the number of frames to output 
-if num_frames_output is "all":
-    num_frames_output = scene.frame_end + 1
+if frame_end is "all":
+    frame_end = scene.frame_end + 1
 else: 
-    num_frames_output += 1
+    frame_end += 1
 #iterate through all frames
-for frame in range(scene.frame_start, num_frames_output):
+for frame in range(frame_start, frame_end):
     print(frame)
     #specify file path to the folder you want to export to
-    scene.render.filepath = output_frames_folder + "/frames/" + str(frame)
+    scene.render.filepath = output_frames_folder + "output_frames/" + str(frame)
     scene.frame_set(frame)
     #render frame
     bpy.ops.render.render(write_still=True)
-    '''
+    
     #add information for each frame to XML file
     child0 = SubElement(frames, 'frame' + str(frame))
     child1 = SubElement(child0, 'markers')
@@ -1246,28 +1228,27 @@ for frame in range(scene.frame_start, num_frames_output):
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
         create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
         create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
-
+'''
     #Log XML for wheel
     wheel_node = SubElement(child4, "wheel")
     create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
     create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
     create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
-
+'''
 #-----------------------------------------------------------------------------------
 # Write and close XML file
 print("Writing XML...")
 #raw XML file
 mydata = ET.tostring(data, encoding="unicode")
-myfile = open(output_frames_folder + "/output_data_raw.xml", "w")
+myfile = open(output_frames_folder + "output_xml/output_data_raw.xml", "w")
 myfile.write(mydata)
 myfile.close() 
 
 #formatted human-readable XML file
 dom = xml.dom.minidom.parseString(mydata)
 pretty_xml_as_string = dom.toprettyxml()
-myfile2 = open(output_frames_folder + "/output_data_pretty.xml", "w")
+myfile2 = open(output_frames_folder + "output_xml/output_data_pretty.xml", "w")
 myfile2.write(pretty_xml_as_string)
 myfile2.close()
 
 print("finished!")
-'''
