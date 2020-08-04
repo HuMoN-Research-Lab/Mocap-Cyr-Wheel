@@ -7,10 +7,10 @@ from xml.etree.ElementTree import Element, tostring, SubElement, Comment
 from datetime import datetime
 import xml.dom.minidom
 
-#Start frame of data
+#Start frame of data (inclusive)
 frame_start = 1
 
-#End frame of data
+#End frame of data (inclusive)
 #set to "all" if you wish to render until the last frame
 frame_end = 2
 
@@ -161,6 +161,9 @@ def create_node(parent, name, text):
 data_array_bones_position = []
 data_array_bones_rotation_q = []
 data_array_bones_rotation_e = []
+data_array_wheel_position = []
+data_array_wheel_rotation_q = []
+data_array_wheel_rotation_e = []
     
 #-----------------------------------------------------------------------------------
 #Create armature object
@@ -783,16 +786,15 @@ def my_handler(scene):
     data_array_bones_position.append(frame_bone_arr_pos)
     data_array_bones_rotation_q.append(frame_bone_arr_rotq)
     data_array_bones_rotation_e.append(frame_bone_arr_rote)
-    data_array_bones_rotation_xyz.append(frame_bone_arr_rotxyz)
-        
+
     #Wheel location and rotation
-    '''
+    
     ring = find_torus()
     global_location = ring.matrix_world[0]
     data_array_wheel_position.append(global_location)
     data_array_wheel_rotation_q.append(ring.matrix_world.decompose()[1])
     data_array_wheel_rotation_e.append(ring.matrix_world.decompose()[1].to_euler())     
-    '''
+    
     #update force plate
     for plate_number in range(len(input_force_plate_arr)):
         #get every 4th sample of force plate data to match framerate of the rest of the data
@@ -803,7 +805,6 @@ def my_handler(scene):
         coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
         
         if (coord_top[2] <= 0):
-            print(coord_top[2])
             #Do not render these objects in final output 
             bpy.data.objects["Cylinder" + str(plate_number)].hide_set(True)
             bpy.data.objects["Cylinder" + str(plate_number)].hide_render = True
@@ -941,7 +942,7 @@ mesh_obob = CreateMesh()
 
 #-----------------------------------------------------------------------------------
 # Clean up the mesh by removing duplicate vertices, make sure all faces are quads, etc
-'''
+
 checked = set()
 for selected_object in bpy.data.objects:
     if selected_object.type != 'MESH':
@@ -962,7 +963,7 @@ for selected_object in bpy.data.objects:
 bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
 armature_data.select_set(state=True) 
-'''
+
 #---------------------------------------------------------------------------------
 #Wheel
 
@@ -1228,13 +1229,12 @@ for frame in range(frame_start, frame_end):
         current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
         create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
         create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
-'''
     #Log XML for wheel
     wheel_node = SubElement(child4, "wheel")
     create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
     create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
     create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
-'''
+
 #-----------------------------------------------------------------------------------
 # Write and close XML file
 print("Writing XML...")
