@@ -14,7 +14,7 @@ frame_end = frame_start + 1
 #set to "all" to output all frames
 num_frames_output = "all"
 #Change: the path of the npy file 
-input_npy = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/WheelForcePlate.tsv"
+input_npy = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/input_tsv_files/Handstands0009.tsv"
 #Change: the path of the folder you want to export xml file and png frames of animation to
 output_frames_folder = "/Users/jackieallex/Downloads/Mocap-Cyr-Wheel"
 
@@ -890,7 +890,7 @@ print("assigned materials")
 
 #-----------------------------------------------------------------------------------
 #add visible sphere meshes on each marker
-
+'''
 for empty in order_of_markers:
     bpy.ops.mesh.primitive_uv_sphere_add(enter_editmode=False, location=(0, 0, 0))
     sphere = bpy.context.selected_objects[0]
@@ -907,7 +907,7 @@ for empty in order_of_markers:
     else:
         # no slots
         sphere.data.materials.append(mat)
-
+'''
 #-----------------------------------------------------------------------------------
 '''
 #Adjust camera position / rotation
