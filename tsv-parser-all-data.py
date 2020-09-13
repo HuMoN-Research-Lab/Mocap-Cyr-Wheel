@@ -7,6 +7,15 @@ from xml.etree.ElementTree import Element, tostring, SubElement, Comment
 from datetime import datetime
 import xml.dom.minidom
 
+#A script that 
+
+#-----------------------------------------------------------------------------------
+#initial set-up
+
+#booleans depending on the data
+has_wheel = True
+has_force_plates = True
+
 #Start frame of data (inclusive)
 frame_start = 1
 
@@ -14,8 +23,6 @@ frame_start = 1
 #set to "all" if you wish to render until the last frame
 frame_end = 2
 
-#default number of frames to output is all of them - change this value to an integer if you 
-#want to output less 
 #directory on computer 
 directory = r"/Users/jackieallex/Downloads/Mocap-Cyr-Wheel/"
 #the path of the tsv file 
@@ -24,62 +31,89 @@ input_tsv = directory + r"input_tsv_files/WheelForcePlate0007.tsv"
 header_end = 11
 #the row number where 0 is the first that holds the marker names
 marker_names_row = 9
-#input force plate data
-input_force_plate_arr = []
-input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
-input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_2.tsv")
-input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_3.tsv")
-input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_4.tsv")
-input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_5.tsv")
-
-#the new filtered force plate data 
-input_force_plate_arr2 = []
-input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_0.npy"))
-input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_1.npy"))
-input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_2.npy"))
-input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_3.npy"))
-input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_4.npy"))
-#when the header ends of the force plate tsv and data begins
-header_end_force = 27
-#Change: the path of the folder you want to export xml file and png frames of animation to
+#folder to output the rendered frames to 
 output_frames_folder = directory 
 
+#-----------------------------------------------------------------------------------
+#force plate data read-in
 
-#script to read tsv files in blender
-#read force plate data and return an array containing all force plate data for given frame
-def create_data_arr_force_plate(frame, plate_id):
-    current_row = force_file[plate_id][frame + header_end_force]
-    cols, rows = (3, 3)
-    arr = [[None]*cols for _ in range(rows)]
-    count = 0
-    count_row = 0
-    for x in range(2, 11):
-        if count == 3:
-            count = 0
-            count_row += 1
-        arr[count_row][count] = current_row[x]
-        count += 1
-    return arr
+if has_force_plates:
+    #input force plate data
+    input_force_plate_arr = []
+    input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_1.tsv")
+    input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_2.tsv")
+    input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_3.tsv")
+    input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_4.tsv")
+    input_force_plate_arr.append(directory +"input_tsv_files/Force_Plate_Data/WheelForcePlate0007_f_5.tsv")
+    #the new filtered force plate data 
+    input_force_plate_arr2 = []
+    input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_0.npy"))
+    input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_1.npy"))
+    input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_2.npy"))
+    input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_3.npy"))
+    input_force_plate_arr2.append(np.load(directory +"input_tsv_files/Force_Plate_Data/FiltFP_4.npy"))
+    #location data of the corners of each force plate
+    fp_corners_arr = []
+    fp_corners_arr.append(directory + "input_tsv_files/Force_Plate_Data/corners/Corners_fp1.tsv")
+    fp_corners_arr.append(directory + "input_tsv_files/Force_Plate_Data/corners/Corners_fp2.tsv")
+    fp_corners_arr.append(directory + "input_tsv_files/Force_Plate_Data/corners/Corners_fp3.tsv")
+    fp_corners_arr.append(directory + "input_tsv_files/Force_Plate_Data/corners/Corners_fp4.tsv")
+    fp_corners_arr.append(directory + "input_tsv_files/Force_Plate_Data/corners/Corners_fp5.tsv")
 
-#an array holding all force files info
-force_file = []
-#hold force plate data for one frame
-force_plate_arr = []
-#array holding arrays of each force plate's X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg
-force_plate_positions = []
+    #when the header ends of the force plate tsv and data begins
+    header_end_top_force = 27
+    #left side time and frame data header
+    header_end_left_force = 2
+    #force plate data has empty column at end
+    right_buffer = 1
 
-#Open and read force plate data
-for x in range(len(input_force_plate_arr)):
-    with open(input_force_plate_arr[x], "r") as tsv_file:
-        force_file_temp = list(csv.reader(tsv_file, delimiter='\t'))
-        force_plate_positions.append([[force_file_temp[9][1],force_file_temp[10][1], force_file_temp[11][1]], [force_file_temp[12][1], force_file_temp[13][1], force_file_temp[14][1]],
-        [force_file_temp[15][1], force_file_temp[16][1], force_file_temp[17][1]], [force_file_temp[18][1], force_file_temp[19][1], force_file_temp[20][1]]])
-        force_file.append(force_file_temp)
-        #the data from the starting frame
-        frame = frame_start
-        force_plate_arr_temp =  create_data_arr_force_plate(frame, x)
-        force_plate_arr.append(force_plate_arr_temp)
+    #read tsv force plate data and return an array containing all force plate data for the given force plate on the given frame
+    def create_data_arr_force_plate(frame, plate_id):
+        current_row = force_file[plate_id][frame + header_end_top_force]
+        #x, y, z data for Force, Moment, COP
+        cols, rows = (3, 3)
+        arr = [[None]*cols for _ in range(rows)]
+        count = 0
+        count_row = 0
+        for x in range(header_end_left_force, len(current_row) - right_buffer):
+            if count == 3:
+                count = 0
+                count_row += 1
+            arr[count_row][count] = current_row[x]
+            count += 1
+        return arr
+
+    #an array holding all force plate files info
+    force_file = []
+    #hold force plate data for one frame
+    force_plate_arr = []
+    #array holding arrays of each force plate's X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg
+    force_plate_positions = []
+
+    #Open and read force plate data
+    for x in range(len(input_force_plate_arr)):
+        with open(input_force_plate_arr[x], "r") as tsv_file:
+            force_file_temp = list(csv.reader(tsv_file, delimiter='\t'))
+            force_plate_positions.append([[force_file_temp[9][1],force_file_temp[10][1], force_file_temp[11][1]], [force_file_temp[12][1], force_file_temp[13][1], force_file_temp[14][1]],
+            [force_file_temp[15][1], force_file_temp[16][1], force_file_temp[17][1]], [force_file_temp[18][1], force_file_temp[19][1], force_file_temp[20][1]]])
+            force_file.append(force_file_temp)
+            #the data from the starting frame
+            frame = frame_start
+            force_plate_arr_temp =  create_data_arr_force_plate(frame, x)
+            force_plate_arr.append(force_plate_arr_temp)
+           
+    #positions of force plates on ground
+    force_plate_positions = []
     
+    #Save location data of each corner of each forceplate
+    for x in range(len(input_force_plate_arr)):
+        with open(fp_corners_arr[x], "r") as tsv_file:
+            corners_file_temp = list(csv.reader(tsv_file, delimiter='\t'))
+            force_plate_positions.append([[corners_file_temp[0][0],corners_file_temp[0][1], corners_file_temp[0][2]], [corners_file_temp[1][0], corners_file_temp[1][1], corners_file_temp[1][2]],
+            [corners_file_temp[2][0], corners_file_temp[2][1], corners_file_temp[2][2]], [corners_file_temp[3][0], corners_file_temp[3][1], corners_file_temp[3][2]]])
+ 
+#-----------------------------------------------------------------------------------
+
 # Create 2D array "arr" to hold all 3D coordinate info of markers
 #return an array containing all marker locations at given frame
 def create_data_arr(frame):
@@ -95,8 +129,7 @@ def create_data_arr(frame):
             count = 0
             count_row += 1
     return arr;
- 
-#-----------------------------------------------------------------------------------
+
 #open file and read marker animation data
 with open(input_tsv, "r") as tsv_file:
     file = list(csv.reader(tsv_file, delimiter='\t'))
@@ -116,18 +149,18 @@ for index in range(1, len(current_row)):
 name = 0
 #an array to hold all marker objects
 order_of_markers = []
-# make sure project unit is correct for imported data
-bpy.context.scene.unit_settings.length_unit = 'METERS'
 #iterate through arr and create an empty object at that location for each element
 for col in arr:
     # parse string float value into floats, create Vector, set empty position to Vector
-    # multiply by .001 because original data is recorded in millimeters, but we want meters for this project
+    # multiply by .001 to scale down data
     coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
+    #Add an empty object to the scene
     bpy.ops.object.add(type='EMPTY', location=coord)  
+    #assign the empty to variable 
     mt = bpy.context.active_object  
     #get name from name array "name_arr"
     mt.name = name_arr[name]
-    #increment name of empty
+    #increment name iter of empty names array 
     name += 1
     #link empty to this scene
     bpy.context.scene.collection.objects.link( mt )
@@ -161,9 +194,11 @@ def create_node(parent, name, text):
 data_array_bones_position = []
 data_array_bones_rotation_q = []
 data_array_bones_rotation_e = []
-data_array_wheel_position = []
-data_array_wheel_rotation_q = []
-data_array_wheel_rotation_e = []
+
+if has_wheel:
+    data_array_wheel_position = []
+    data_array_wheel_rotation_q = []
+    data_array_wheel_rotation_e = []
     
 #-----------------------------------------------------------------------------------
 #Create armature object
@@ -188,24 +223,6 @@ col.objects.link(obj)
 #set as active object
 bpy.context.view_layer.objects.active = obj
 
-#list of all markers in order of array order_of_markers to keep track of their index in the array
-'''
-arr_markers_sanity_check = ['MARKER_NAMES', '0Steve_HeadL', '1Steve_HeadTop', '2Steve_HeadR', 
-    '3Steve_HeadFront', '4Steve_LShoulderTop', '5Steve_LShoulderBack', 
-    '6Steve_LArm', '7Steve_LElbowOut', '8Steve_LWristOut', '9Steve_LWristIn', 
-    '10Steve_LHandOut', '11Steve_RShoulderTop', '12Steve_RShoulderBack', 
-    '13Steve_RArm', '14Steve_RElbowOut', '15Steve_RWristOut', '16Steve_RWristIn', 
-    '17Steve_RHandOut', '18Steve_Chest', '19Steve_SpineTop', '20Steve_BackL', 
-    '21Steve_BackR', '22Steve_WaistLFront', '23Steve_WaistLBack', 
-    '24Steve_WaistRBack', '25Steve_WaistRFront', '26Steve_LThigh', 
-    '27Steve_LKneeOut', '28Steve_LShin', '29Steve_LAnkleOut', 
-    '30Steve_LHeelBack', '31Steve_LForefootOut', '32Steve_LToeTip', 
-    '33Steve_LForefootIn', '34Steve_RThigh', '35Steve_RKneeOut', '36Steve_RShin', 
-    '37Steve_RAnkleOut', '38Steve_RHeelBack', '39Steve_RForefootOut', 
-    '40Steve_RToeTip', '41Steve_RForefootIn', '42Steve_CyrWheel01', 
-    '43Steve_CyrWheel02', '44Steve_CyrWheel03', '45Steve_CyrWheel04', 
-    '46Steve_CyrWheel05']
-'''
 #--------------------------------------------------------------------------
 #Create mesh outline of skeleton parts
  # verts made with XYZ coords
@@ -287,6 +304,7 @@ def add_vertex_group_hooks():
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
+        #Add a hook modifier so that a vertice controlled by a specific empty 
         bpy.ops.object.modifier_add(type='HOOK')
         hook_name = "Hook" + str(x)
         bpy.context.object.modifiers["Hook"].name = hook_name
@@ -297,104 +315,76 @@ add_vertex_group_hooks()
 #keep track of mesh object
 outline_mesh_obob = obj
 
-#the first force plate
-plate_number = 0
+#--------------------------------------------------------------------------
+#Create visualization force plates and force arrows
+if has_force_plates:
+    #the first force plate
+    plate_number = 0
 
-#array of each plate's origin(center)
-plate_origins = []
+    #array that will hold each plate's origin(center)
+    plate_origins = []
 
-#Later on: import this from file
-#positions of force plates on ground
-force_plate_positions =  [[[ 349.09483744, 1310.58521453,   -2.58046351],
-       [ 749.09483744, 1310.58521453,   -2.58046351],
-       [ 749.09483744,  710.58521453,   -2.58046351],
-       [ 349.09483744,  710.58521453,   -2.58046351]],
-       
-        [[ 350.11955184, 2065.44425079,   -3.28232872],
-       [ 750.11955184, 2065.44425079,   -3.28232872],
-       [ 750.11955184, 1465.44425079,   -3.28232872],
-       [ 350.11955184, 1465.44425079,   -3.28232872]],
-       
-        [[353.54090363, 552.47353625,  -1.88149265],
-       [753.54090363, 552.47353625,  -1.88149265],
-       [753.54090363, -47.52646375,  -1.88149265],
-       [353.54090363, -47.52646375,  -1.88149265]],
-       
-        [[ 760.3469681 , 2065.06152546,   -4.22722817],
-       [1160.3469681 , 2065.06152546,   -4.22722817],
-       [1160.3469681 , 1465.06152546,   -4.22722817],
-       [ 760.3469681 , 1465.06152546,   -4.22722817]],
-       
-        [[ 345.28525791, 2817.40735835,   -3.98611513],
-       [ 745.28525791, 2817.40735835,   -3.98611513],
-       [ 745.28525791, 2217.40735835,   -3.98611513],
-       [ 345.28525791, 2217.40735835,   -3.98611513]]]
-
-#force plate mesh
-for force_plate_position in force_plate_positions:
-    #iterate through array holding all force plate locations and create a mesh for each one
-    X_corner_pos = Vector((float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001))
-    X_corner_neg = Vector((float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001))
-    Neg_x_neg = Vector((float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001))
-    pos_x_neg = Vector((float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001))
-    
-    mesh_f = bpy.data.meshes.new("force_plate" + str(plate_number))  # add the new mesh
-    obj_f = bpy.data.objects.new("force_plate_object" + str(plate_number), mesh_f)
-    col = bpy.data.collections.get("Collection")
-    col.objects.link(obj_f)
-    bpy.context.view_layer.objects.active = obj_f
-    
-    #vertices
-    verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
-    #edges between indexed vertices
-    edges_f =  [(0,1),(1,2),(2,3),(3,0)]
-    
-    #Create the mesh with the vertices and faces
-    obj_f.data.from_pydata(verts_f, edges_f, [])
-    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-    bpy.context.view_layer.objects.active = obj_f
-    obj_f.select_set(state=True)
-    #Set origin of the plane to its median center
-    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-    
+    #force plate mesh
+    for force_plate_position in force_plate_positions:
+        #iterate through array holding all force plate locations and create a mesh for each one
+        X_corner_pos = Vector((float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001))
+        X_corner_neg = Vector((float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001))
+        Neg_x_neg = Vector((float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001))
+        pos_x_neg = Vector((float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001))
+        
+        mesh_f = bpy.data.meshes.new("force_plate" + str(plate_number))  # add the new mesh
+        obj_f = bpy.data.objects.new("force_plate_object" + str(plate_number), mesh_f)
+        col = bpy.data.collections.get("Collection")
+        col.objects.link(obj_f)
+        bpy.context.view_layer.objects.active = obj_f
+        
+        #vertices
+        verts_f = [X_corner_pos, X_corner_neg, Neg_x_neg, pos_x_neg]
+        #edges between indexed vertices
+        edges_f =  [(0,1),(1,2),(2,3),(3,0)]
+        
+        #Create the mesh with the vertices and faces
+        obj_f.data.from_pydata(verts_f, edges_f, [])
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        bpy.context.view_layer.objects.active = obj_f
+        obj_f.select_set(state=True)
+        #Set origin of the plane to its median center
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+        
 
 
-    #find plate origin (in the center of the force plate, so the average of all corners)
-    a = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
-    b = [float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001]
-    c = [float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001]
-    d = [float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001]
+        #find plate origin (in the center of the force plate, so the average of all corners)
+        a = [float(force_plate_position[0][0])* 0.001, float(force_plate_position[0][1])* 0.001, float(force_plate_position[0][2])* 0.001]
+        b = [float(force_plate_position[1][0])* 0.001, float(force_plate_position[1][1])* 0.001, float(force_plate_position[1][2])* 0.001]
+        c = [float(force_plate_position[2][0])* 0.001, float(force_plate_position[2][1])* 0.001, float(force_plate_position[2][2])* 0.001]
+        d = [float(force_plate_position[3][0])* 0.001, float(force_plate_position[3][1])* 0.001, float(force_plate_position[3][2])* 0.001]
 
-    plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
-    
-    plate_origins.append(plate_origin)
-    #set arrow bottom to center of plate
-    bpy.data.objects["Arrow-bottom" + str(plate_number)].location = plate_origin
+        plate_origin =  [(a1 + b1 + c1 + d1) / 4 for a1, b1, c1, d1  in zip(a, b, c, d)]
+        
+        plate_origins.append(plate_origin)
+        #set arrow bottom to center of plate
+        bpy.data.objects["Arrow-bottom" + str(plate_number)].location = plate_origin
 
-    bpy.context.view_layer.objects.active = obj_f
-    bpy.ops.object.select_all(action='DESELECT')
-    obj_f.select_set(state=True)
-    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-    #Add face between edges to render force plate with a color
-    bpy.ops.mesh.edge_face_add()
-    #increment the number force plate we are working with
-    plate_number += 1
+        bpy.context.view_layer.objects.active = obj_f
+        bpy.ops.object.select_all(action='DESELECT')
+        obj_f.select_set(state=True)
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+        #Add face between edges to render force plate with a color
+        bpy.ops.mesh.edge_face_add()
+        #increment the number force plate we are working with
+        plate_number += 1
 
 #--------------------------------------------------------------
 #Virtual Markers!
 
-#Three types of marker relationships:
+#Two types of marker relationships:
 
 # - "weight": the weighted average of multiple markers. the virtual_markers[x] contains the 
 #list of markers that affect this virtual one. the weights[x] contains their corresponding weights in order.
 
-# - "xyz": given 3 markers recorded in virtual_markers[x] (can repeat the same marker as two of the three), make this virtual marker
-# have the x_pos of the first, the y_pos of the second, and the z_pos of the third
-
 # - "offset": this virtual marker will have the position of another marker, but can be offset by an amount on the 
 #x, y, and/or z axis. The marker will be recorded in virtual_markers[x][0] and the amount offset on each axis 
 #will be recorded in weights[]
-
 
 #Create marker methods for each different type of relationship:
 #Create virtual markers takes in a string name and a list of marker s that influence it and weights
@@ -452,7 +442,6 @@ def update_virtual_data(relationship, surrounding, vweights, vname):
     
 #-----------------------------------------------------------------
 #Define relationships and create virtual markers
-
 
 #Wrists: Halfway between 15Steve_RWristOut and 16Steve_RWristIn/ 8Steve_LWristOut and 9Steve_LWristIn
 l0 = [order_of_markers[15], order_of_markers[16]]
@@ -612,7 +601,6 @@ def update_virtual_marker(index):
     virtual_markers[index].location = coord
         
         
-
 #-----------------------------------------------------------------------------------
 
 #adds child bone given corresponding parent and empty
@@ -741,8 +729,6 @@ bpy.context.scene.render.fps = 300
 
 #handler function runs on every frame of the animation                
 def my_handler(scene): 
-    frames_seen = 0
-    #must be in pose mode to set keyframes
     bpy.ops.object.mode_set(mode='POSE')
     #keep track of current_marker
     current_marker = 0 
@@ -753,7 +739,7 @@ def my_handler(scene):
     #get the list of marker points from the current frame
     #markers_list = create_data_arr((frame - 1) / 400)
     markers_list = create_data_arr(current_skel_frame[0])
-        #current virtual marker 
+    #current virtual marker 
     current_virtual_marker = 0
     #iterate through list of markers in this frame
     for col in markers_list:
@@ -762,17 +748,17 @@ def my_handler(scene):
             empty = order_of_markers[current_marker] 
             #change empty position : this is where the change in location every frame happens
             empty.location = coord
-            #Set keyframes of the empty location at this frame to save the animation
-            #empty.keyframe_insert(data_path='location',frame=scene.frame_current)
-            #increment counter of the number marker we are currently changing
+        #increment counter of the number marker we are currently changing
         current_marker += 1 
     for index in range(len(virtual_markers)):
         update_virtual_marker(index)
     
+    #XML data for this frame
     frame_bone_arr_pos = []
     frame_bone_arr_rotq = []
     frame_bone_arr_rote = []
     frame_bone_arr_rotxyz = []
+    
     #Add info to special XML data arrays for bones and wheel
     for bone in bpy.data.objects['Armature'].pose.bones:
         o = bpy.data.objects['Armature']       # Our armature object
@@ -788,38 +774,38 @@ def my_handler(scene):
     data_array_bones_rotation_e.append(frame_bone_arr_rote)
 
     #Wheel location and rotation
-    
-    ring = find_torus()
-    global_location = ring.matrix_world[0]
-    data_array_wheel_position.append(global_location)
-    data_array_wheel_rotation_q.append(ring.matrix_world.decompose()[1])
-    data_array_wheel_rotation_e.append(ring.matrix_world.decompose()[1].to_euler())     
-    
-    #update force plate
-    for plate_number in range(len(input_force_plate_arr)):
-        #get every 4th sample of force plate data to match framerate of the rest of the data
-        current_force_plate_arr = input_force_plate_arr2[plate_number][(frame * 4)]
-        #Center of pressure from data is the base of the arrow
-        coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
-        #force from data scaled by a number is the height of arrow 
-        coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
-        
-        if (coord_top[2] <= 0):
-            #Do not render these objects in final output 
-            bpy.data.objects["Cylinder" + str(plate_number)].hide_set(True)
-            bpy.data.objects["Cylinder" + str(plate_number)].hide_render = True
-            bpy.data.objects["Cone" + str(plate_number)].hide_set(True)
-            bpy.data.objects["Cone" + str(plate_number)].hide_render = True
+    if has_wheel:
+        ring = find_torus()
+        global_location = ring.matrix_world[0]
+        data_array_wheel_position.append(global_location)
+        data_array_wheel_rotation_q.append(ring.matrix_world.decompose()[1])
+        data_array_wheel_rotation_e.append(ring.matrix_world.decompose()[1].to_euler())     
+    if has_force_plates:
+        #update force plate
+        for plate_number in range(len(input_force_plate_arr)):
+            #get every 4th sample of force plate data to match framerate of the rest of the data
+            current_force_plate_arr = input_force_plate_arr2[plate_number][(frame * 4)]
+            #Center of pressure from data is the base of the arrow
+            coord_bottom = Vector((plate_origins[plate_number][0] + (float(current_force_plate_arr[2][0]))* 0.001, plate_origins[plate_number][1] + (float(current_force_plate_arr[2][1]))* 0.001, plate_origins[plate_number][2] + (float(current_force_plate_arr[2][2])* 0.001)))
+            #force from data scaled by a number is the height of arrow 
+            coord_top = Vector((coord_bottom[0] + float(current_force_plate_arr[0][0])* 0.001, coord_bottom[1] + float(current_force_plate_arr[0][1])* 0.001, coord_bottom[2] + float(current_force_plate_arr[0][2])* 0.001))
             
-        else:
-            #render in final output
-            bpy.data.objects["Cylinder" + str(plate_number)].hide_set(False)
-            bpy.data.objects["Cylinder" + str(plate_number)].hide_render = False
-            bpy.data.objects["Cone" + str(plate_number)].hide_set(False)
-            bpy.data.objects["Cone" + str(plate_number)].hide_render = False
-        bpy.data.objects["Arrow-bottom" + str(plate_number)].location = coord_bottom
-        bpy.data.objects["Arrow-top" + str(plate_number)].location = coord_top
-    
+            if (coord_top[2] <= 0):
+                #Do not render these objects in final output 
+                bpy.data.objects["Cylinder" + str(plate_number)].hide_set(True)
+                bpy.data.objects["Cylinder" + str(plate_number)].hide_render = True
+                bpy.data.objects["Cone" + str(plate_number)].hide_set(True)
+                bpy.data.objects["Cone" + str(plate_number)].hide_render = True
+                
+            else:
+                #render in final output
+                bpy.data.objects["Cylinder" + str(plate_number)].hide_set(False)
+                bpy.data.objects["Cylinder" + str(plate_number)].hide_render = False
+                bpy.data.objects["Cone" + str(plate_number)].hide_set(False)
+                bpy.data.objects["Cone" + str(plate_number)].hide_render = False
+            bpy.data.objects["Arrow-bottom" + str(plate_number)].location = coord_bottom
+            bpy.data.objects["Arrow-top" + str(plate_number)].location = coord_top
+        
 
 #script to create a mesh of the armature 
 def CreateMesh():
@@ -967,104 +953,113 @@ armature_data.select_set(state=True)
 #---------------------------------------------------------------------------------
 #Wheel
 
-wheel_markers = [] 
-
-#all of the wheel markers
-for tracker in bpy.data.objects:
-    #if the object is an empty
-    if tracker.type == 'EMPTY' and ("CyrWheel" in tracker.name):
-        wheel_markers.append(tracker)
-        
-#create a plane mesh connecting the wheel markers
-bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-ring_mesh = bpy.data.meshes.new("ring_plane")  # add the new mesh
-ring_obj = bpy.data.objects.new("ring_plane_object", ring_mesh)
-col = bpy.data.collections.get("Collection")
-col.objects.link(ring_obj)
-bpy.context.view_layer.objects.active = ring_obj
-
- # 5 verts made with XYZ coords
-verts_ring = []
-faces_ring = []
-face_num = 0
-
-#make all wheel markers have vertices and connect them all with a face
-for marker in wheel_markers:
-    verts_ring.append(marker.location)
-    faces_ring.append(face_num)
-    face_num += 1
-    
-edges_ring = []
-
-faces_ring = [faces_ring]
-
-#Create the mesh with the vertices and faces
-ring_mesh.from_pydata(verts_ring, edges_ring, faces_ring)
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-bpy.context.view_layer.objects.active = ring_obj
-ring_obj.select_set(state=True)
-#Set origin of the plane to its median center
-#bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-
-#Do not render the ring in final output
-ring_obj.hide_set(True)
-ring_obj.hide_render = True
-
-#Create vertex groups, one for each vertex
-vg = ring_obj.vertex_groups.new(name="group0")
-vg.add([0], 1, "ADD")
-
-vg = ring_obj.vertex_groups.new(name="group1")
-vg.add([1], 1, "ADD")
-
-vg = ring_obj.vertex_groups.new(name="group2")
-vg.add([2], 1, "ADD")
-
-vg = ring_obj.vertex_groups.new(name="group3")
-vg.add([3], 1, "ADD")
-
-vg = ring_obj.vertex_groups.new(name="group4")
-vg.add([4], 1, "ADD")
-
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-
-#Add hooks for each vertex group
-ring_obj.select_set(True)
-bpy.context.view_layer.objects.active = ring_obj
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook"].object = wheel_markers[0]
-bpy.context.object.modifiers["Hook"].vertex_group = "group0"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.001"].object = wheel_markers[1]
-bpy.context.object.modifiers["Hook.001"].vertex_group = "group1"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.002"].object = wheel_markers[2]
-bpy.context.object.modifiers["Hook.002"].vertex_group = "group2"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.003"].object = wheel_markers[3]
-bpy.context.object.modifiers["Hook.003"].vertex_group = "group3"
-
-bpy.ops.object.modifier_add(type='HOOK')
-bpy.context.object.modifiers["Hook.004"].object = wheel_markers[4]
-bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
-
-
 #Find torus object in starter file 
 def find_torus():
     for obj in bpy.context.scene.objects:
         if obj.name.startswith("Torus"):
             return obj
 ring = find_torus()
+
+if has_wheel:
+
+    wheel_markers = [] 
+
+    #all of the wheel markers
+    for tracker in bpy.data.objects:
+        #if the object is an empty
+        if tracker.type == 'EMPTY' and ("CyrWheel" in tracker.name):
+            wheel_markers.append(tracker)
+            
+    #create a plane mesh connecting the wheel markers
+    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    ring_mesh = bpy.data.meshes.new("ring_plane")  # add the new mesh
+    ring_obj = bpy.data.objects.new("ring_plane_object", ring_mesh)
+    col = bpy.data.collections.get("Collection")
+    col.objects.link(ring_obj)
+    bpy.context.view_layer.objects.active = ring_obj
+
+     # 5 verts made with XYZ coords
+    verts_ring = []
+    faces_ring = []
+    face_num = 0
+
+    #make all wheel markers have vertices and connect them all with a face
+    for marker in wheel_markers:
+        verts_ring.append(marker.location)
+        faces_ring.append(face_num)
+        face_num += 1
         
-### parent the torus ring mesh object to the animated plane 
-ring.parent = ring_obj
-ring.parent_type = 'VERTEX_3'
-n = len(ring_obj.data.vertices)
-#Parent it to these 3 vertices
-ring.parent_vertices = range(1, 4)
+    edges_ring = []
+
+    faces_ring = [faces_ring]
+
+    #Create the mesh with the vertices and faces
+    ring_mesh.from_pydata(verts_ring, edges_ring, faces_ring)
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+    bpy.context.view_layer.objects.active = ring_obj
+    ring_obj.select_set(state=True)
+    #Set origin of the plane to its median center
+    #bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
+    #Do not render the ring in final output
+    ring_obj.hide_set(True)
+    ring_obj.hide_render = True
+
+    #Create vertex groups, one for each vertex
+    vg = ring_obj.vertex_groups.new(name="group0")
+    vg.add([0], 1, "ADD")
+
+    vg = ring_obj.vertex_groups.new(name="group1")
+    vg.add([1], 1, "ADD")
+
+    vg = ring_obj.vertex_groups.new(name="group2")
+    vg.add([2], 1, "ADD")
+
+    vg = ring_obj.vertex_groups.new(name="group3")
+    vg.add([3], 1, "ADD")
+
+    vg = ring_obj.vertex_groups.new(name="group4")
+    vg.add([4], 1, "ADD")
+
+    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+    #Add hooks for each vertex group
+    ring_obj.select_set(True)
+    bpy.context.view_layer.objects.active = ring_obj
+    bpy.ops.object.modifier_add(type='HOOK')
+    bpy.context.object.modifiers["Hook"].object = wheel_markers[0]
+    bpy.context.object.modifiers["Hook"].vertex_group = "group0"
+
+    bpy.ops.object.modifier_add(type='HOOK')
+    bpy.context.object.modifiers["Hook.001"].object = wheel_markers[1]
+    bpy.context.object.modifiers["Hook.001"].vertex_group = "group1"
+
+    bpy.ops.object.modifier_add(type='HOOK')
+    bpy.context.object.modifiers["Hook.002"].object = wheel_markers[2]
+    bpy.context.object.modifiers["Hook.002"].vertex_group = "group2"
+
+    bpy.ops.object.modifier_add(type='HOOK')
+    bpy.context.object.modifiers["Hook.003"].object = wheel_markers[3]
+    bpy.context.object.modifiers["Hook.003"].vertex_group = "group3"
+
+    bpy.ops.object.modifier_add(type='HOOK')
+    bpy.context.object.modifiers["Hook.004"].object = wheel_markers[4]
+    bpy.context.object.modifiers["Hook.004"].vertex_group = "group4"
+    
+    ring.hide_set(False)
+    ring.hide_render = False
+            
+    ### parent the torus ring mesh object to the animated plane 
+    ring.parent = ring_obj
+    ring.parent_type = 'VERTEX_3'
+    n = len(ring_obj.data.vertices)
+    #Parent it to these 3 vertices
+    ring.parent_vertices = range(1, 4)
+else: 
+    #hide torus starter object from render output
+    ring.hide_set(True)
+    ring.hide_render = True
+    
 
 #-----------------------------------------------------------------------------------
 #Assign material to skeleton bones
@@ -1103,23 +1098,24 @@ else:
     # no slots
     outline_mesh_obob.data.materials.append(mat2)
 
-for arrow_force_num in range(len(input_force_plate_arr)):
-    #force plate
-    mat4 = bpy.data.materials.get("walls")
-    if mat4 is None:
-        # create material
-        print("mat was none")
-        mat4 = bpy.data.materials.new(name="walls")
-    else:
-        print("mat was found")
-    # Assign it to object
-    obj_f = bpy.data.objects["force_plate_object" + str(arrow_force_num)]
-    if obj_f.data.materials:
-        # assign to 1st material slot
-         obj_f.data.materials[0] = mat4   
-    else:
-        # no slots
-        obj_f.data.materials.append(mat4)
+if has_force_plates:
+    for arrow_force_num in range(len(input_force_plate_arr)):
+        #force plate
+        mat4 = bpy.data.materials.get("walls")
+        if mat4 is None:
+            # create material
+            print("mat was none")
+            mat4 = bpy.data.materials.new(name="walls")
+        else:
+            print("mat was found")
+        # Assign it to object
+        obj_f = bpy.data.objects["force_plate_object" + str(arrow_force_num)]
+        if obj_f.data.materials:
+            # assign to 1st material slot
+             obj_f.data.materials[0] = mat4   
+        else:
+            # no slots
+            obj_f.data.materials.append(mat4)
 
 print("assigned materials")
 
@@ -1144,18 +1140,6 @@ for empty in order_of_markers:
         # no slots
         sphere.data.materials.append(mat)
 
-#-----------------------------------------------------------------------------------
-'''
-#Adjust camera position / rotation
-bpy.ops.object.posemode_toggle()
-camera = bpy.data.objects["Camera"]
-camera.location = Vector((0, 0, -60))
-camera.rotation_mode = "QUATERNION"
-camera.rotation_quaternion[0] = 0
-camera.rotation_quaternion[1] = 20
-camera.rotation_quaternion[2] = -20
-camera.rotation_quaternion[3] = 0
-'''
 #--------------------------------------------------------------------
 #append handler function
                 
@@ -1200,8 +1184,6 @@ for frame in range(frame_start, frame_end):
     child1 = SubElement(child0, 'markers')
     child11 = SubElement(child0, 'skeleton_virtual_markers')
     child2 = SubElement(child0, 'armature')
-    child3 = SubElement(child0, 'force_plates')
-    child4 = SubElement(child0, 'wheel')
     current_marker = 0
     #Log XML for each marker from original npy data
     for col in arr:
@@ -1223,17 +1205,23 @@ for frame in range(frame_start, frame_end):
         create_node(bone_node, "Location", str(data_array_bones_position[frame - 1][index][0]) + "," + str(data_array_bones_position[frame - 1][index][1]) + "," + str(data_array_bones_position[frame - 1][index][2]))
         create_node(bone_node, "Rotation_Quaternion", str(data_array_bones_rotation_q[frame - 1][index][0]) + "," + str(data_array_bones_rotation_q[frame - 1][index][1]) + "," + str(data_array_bones_rotation_q[frame - 1][index][2]) + "," + str(data_array_bones_rotation_q[frame - 1][index][3]))
         create_node(bone_node, "Rotation_Euler", str(data_array_bones_rotation_e[frame - 1][index][0]) + "," + str(data_array_bones_rotation_e[frame - 1][index][1]) + "," + str(data_array_bones_rotation_e[frame - 1][index][2]) )
-    #Log XML for each plate's force
-    for plate_number in range(len(input_force_plate_arr)):
-        plate_node = SubElement(child3, "plate_" + str(plate_number))
-        current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
-        create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
-        create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
-    #Log XML for wheel
-    wheel_node = SubElement(child4, "wheel")
-    create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
-    create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
-    create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
+    
+    if has_force_plates:
+        child3 = SubElement(child0, 'force_plates')
+        #Log XML for each plate's force
+        for plate_number in range(len(input_force_plate_arr)):
+            plate_node = SubElement(child3, "plate_" + str(plate_number))
+            current_force_plate_arr = create_data_arr_force_plate(frame, plate_number)
+            create_node(plate_node, "COP", str(current_force_plate_arr[2][0] + "," + current_force_plate_arr[2][1] + "," + current_force_plate_arr[2][2]))
+            create_node(plate_node, "Force", str(current_force_plate_arr[0][0] + "," + current_force_plate_arr[0][1] + "," + current_force_plate_arr[0][2]))
+        
+    if has_wheel:
+        child4 = SubElement(child0, 'wheel')
+        #Log XML for wheel
+        wheel_node = SubElement(child4, "wheel")
+        create_node(wheel_node, "Location", str(data_array_wheel_position[frame - 1][0]) + "," + str(data_array_wheel_position[frame- 1][1]) + "," + str(data_array_wheel_position[frame - 1][2]))
+        create_node(wheel_node, "Rotation_Quaternion", str(data_array_wheel_rotation_q[frame - 1][0]) + "," + str(data_array_wheel_rotation_q[frame - 1][1]) + "," + str(data_array_wheel_rotation_q[frame - 1][2]) + "," + str(data_array_wheel_rotation_q[frame - 1][3]))
+        create_node(wheel_node, "Rotation_Euler", str(data_array_wheel_rotation_e[frame - 1][0]) + "," + str(data_array_wheel_rotation_e[frame - 1][1]) + "," + str(data_array_wheel_rotation_e[frame - 1][2]))
 
 #-----------------------------------------------------------------------------------
 # Write and close XML file
