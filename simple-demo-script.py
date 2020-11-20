@@ -730,7 +730,7 @@ bpy.context.view_layer.objects.active = armature_data
 #Set armature selected
 armature_data.select_set(state=True)
 #iterate through frames
-for frame in range(frame_start, frame_end):
+for frame in range(0, 1):
     print(frame)
     #specify file path to the folder you want to export to
     scene.render.filepath = output_frames_folder + "output_frames/" + str(frame)
